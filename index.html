@@ -281,7 +281,11 @@
       <div class="form-grid">
         <label>
           <span>Artist Name *</span>
-          <input id="artistName" type="text" placeholder="Enter artist name" required />
+          <div class="row" style="align-items: center; gap: 8px;">
+            <input id="artistName" type="text" placeholder="Enter artist name" required />
+            <button id="autoFillBtn" type="button" class="secondary" style="white-space: nowrap;">Auto-fill</button>
+          </div>
+          <p id="autoFillStatus" class="hint" aria-live="polite"></p>
         </label>
         <label>
           <span>Notes</span>
@@ -319,6 +323,13 @@
     const STORAGE_KEY = 'artistNotebookData';
     let artists = [];
     let currentId = null;
+    let currentEnrichment = null;
+
+    function setAutoFillStatus(message = '', tone = 'muted') {
+      const el = document.getElementById('autoFillStatus');
+      el.textContent = message;
+      el.style.color = tone === 'error' ? '#b91c1c' : 'var(--muted)';
+    }
 
     function loadArtists() {
       try {
@@ -397,12 +408,14 @@
       document.getElementById('artistNotes').value = '';
       document.getElementById('linksContainer').innerHTML = '';
       document.getElementById('photoPreview').innerHTML = '';
+      setAutoFillStatus('');
       addLinkField();
     }
 
     function openEditor(id = null) {
       document.getElementById('listView').classList.add('hidden');
       document.getElementById('editorView').classList.remove('hidden');
+      setAutoFillStatus('');
       if (!id) {
         resetEditor();
         return;
@@ -530,6 +543,116 @@
       });
     }
 
+    async function autoFillFromWeb() {
+      const name = document.getElementById('artistName').value.trim();
+      if (!name) {
+        alert('Enter a name first');
+        return;
+      }
+      setAutoFillStatus('Searching…');
+      try {
+        currentEnrichment = await fetchWikidataProfile(name);
+        if (!currentEnrichment) {
+          setAutoFillStatus('No structured info found.');
+          return;
+        }
+        applyEnrichment(currentEnrichment);
+        setAutoFillStatus('Auto-filled from Wikidata/Wikipedia.');
+      } catch (err) {
+        console.error(err);
+        setAutoFillStatus('Could not fetch details right now.', 'error');
+      }
+    }
+
+    async function fetchWikidataProfile(name) {
+      const searchUrl = `https://www.wikidata.org/w/api.php?action=wbsearchentities&search=${encodeURIComponent(name)}&language=en&format=json&origin=*`;
+      const searchRes = await fetch(searchUrl);
+      if (!searchRes.ok) throw new Error('Search failed');
+      const searchJson = await searchRes.json();
+      const candidate = (searchJson.search || [])[0];
+      if (!candidate) return null;
+
+      const entityUrl = `https://www.wikidata.org/wiki/Special:EntityData/${candidate.id}.json`;
+      const entityRes = await fetch(entityUrl);
+      if (!entityRes.ok) throw new Error('Entity fetch failed');
+      const entityJson = await entityRes.json();
+      const entity = entityJson.entities?.[candidate.id];
+      if (!entity) return null;
+
+      const claims = entity.claims || {};
+      const birth = claims.P569?.[0]?.mainsnak?.datavalue?.value?.time;
+      const nationalityIds = (claims.P27 || []).map(c => c.mainsnak?.datavalue?.value?.id).filter(Boolean);
+      const collectionIds = (claims.P195 || []).map(c => c.mainsnak?.datavalue?.value?.id).filter(Boolean);
+      const employerIds = (claims.P108 || []).map(c => c.mainsnak?.datavalue?.value?.id).filter(Boolean);
+
+      const relatedIds = [...new Set([...nationalityIds, ...collectionIds, ...employerIds])];
+      const labels = relatedIds.length ? await fetchLabels(relatedIds) : {};
+
+      const nationalities = nationalityIds.map(id => labels[id]).filter(Boolean);
+      const collections = collectionIds.map(id => labels[id]).filter(Boolean);
+      const employers = employerIds.map(id => labels[id]).filter(Boolean);
+
+      return {
+        name: candidate.label,
+        description: candidate.description || entity.descriptions?.en?.value || '',
+        birthDate: birth ? parseWikidataDate(birth) : null,
+        nationalities,
+        collections,
+        employers,
+        wikipediaUrl: entity.sitelinks?.enwiki?.url || '',
+        wikidataUrl: `https://www.wikidata.org/wiki/${candidate.id}`,
+      };
+    }
+
+    async function fetchLabels(ids) {
+      const url = `https://www.wikidata.org/w/api.php?action=wbgetentities&ids=${ids.join('|')}&props=labels&languages=en&format=json&origin=*`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('Label fetch failed');
+      const json = await res.json();
+      const map = {};
+      Object.entries(json.entities || {}).forEach(([id, data]) => {
+        const label = data.labels?.en?.value;
+        if (label) map[id] = label;
+      });
+      return map;
+    }
+
+    function parseWikidataDate(timeStr) {
+      try {
+        const match = timeStr.match(/(\d{4}-\d{2}-\d{2})/);
+        return match ? new Date(match[1]) : null;
+      } catch (_) {
+        return null;
+      }
+    }
+
+    function applyEnrichment(profile) {
+      if (!profile) return;
+      const notesEl = document.getElementById('artistNotes');
+      const parts = [];
+      if (profile.description) parts.push(profile.description);
+      if (profile.birthDate) parts.push(`Born: ${profile.birthDate.toLocaleDateString()}`);
+      if (profile.nationalities?.length) parts.push(`Nationality: ${profile.nationalities.join(', ')}`);
+      if (profile.collections?.length) parts.push(`Museums/Collections: ${profile.collections.slice(0, 6).join(', ')}`);
+      if (profile.employers?.length) parts.push(`Galleries/Institutions: ${profile.employers.slice(0, 6).join(', ')}`);
+      const autoNote = parts.join('\n');
+      if (autoNote) {
+        if (notesEl.value.trim()) {
+          notesEl.value = `${notesEl.value.trim()}\n\n${autoNote}`;
+        } else {
+          notesEl.value = autoNote;
+        }
+      }
+
+      const links = collectLinks();
+      const extraLinks = [profile.wikipediaUrl, profile.wikidataUrl].filter(Boolean);
+      const merged = [...links];
+      extraLinks.forEach(l => {
+        if (l && !merged.includes(l)) merged.push(l);
+      });
+      renderLinks(merged.length ? merged : ['']);
+    }
+
     function saveCurrentArtist() {
       const name = document.getElementById('artistName').value.trim();
       if (!name) {
@@ -586,6 +709,7 @@
     document.getElementById('searchInput').addEventListener('input', (e) => renderList(e.target.value));
     document.getElementById('photoInput').addEventListener('change', (e) => handleFileInput(e.target.files));
     document.getElementById('importUrlBtn').addEventListener('click', importImageFromUrl);
+    document.getElementById('autoFillBtn').addEventListener('click', autoFillFromWeb);
 
     loadArtists();
     renderList();
