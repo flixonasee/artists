@@ -529,6 +529,14 @@
         .filter(w => w.title || w.year || w.image);
     }
 
+    function normalizeWorksForEdit(works = []) {
+      return (works || []).map(w => ({
+        title: w.title || '',
+        year: w.year || '',
+        image: w.image || w.src || '',
+      }));
+    }
+
     function setAutoFillStatus(message = '', tone = 'muted') {
       const el = document.getElementById('autoFillStatus');
       el.textContent = message;
@@ -651,7 +659,7 @@
       document.getElementById('artistNotes').value = artist.notes || '';
       renderLinks(artist.links || []);
       renderImages(normalizeImages(artist.images || []));
-      renderWorks(normalizeWorks(artist.works || []));
+      renderWorks(normalizeWorksForEdit(artist.works || []));
       setEditingEnabled(false);
     }
 
@@ -722,7 +730,7 @@
     }
 
     function renderWorks(works = []) {
-      const normalized = normalizeWorks(works);
+      const normalized = normalizeWorksForEdit(works);
       const container = document.getElementById('worksContainer');
       container.innerHTML = '';
       const list = normalized.length ? normalized : [{ title: '', year: '', image: '' }];
