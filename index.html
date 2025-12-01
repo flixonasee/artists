@@ -407,13 +407,25 @@
         <div class="list-controls">
           <input id="searchInput" type="text" placeholder="Search names, notes, links, captions, works..." aria-label="Search artists" />
         </div>
-        <p class="hint" style="margin-bottom:16px;">Quick start: tap "Add Artist", fill name/notes, paste any links, and save. To add photos, upload from your device or import a web image URL in the editor. Search looks inside names, notes, links, captions, and related works.</p>
+        <p class="hint" style="margin-bottom:16px;">Quick start: tap "Add Artist", fill name/notes, paste any links, and save. To add photos, upload from your device or import a web image URL in the editor. Search looks inside names, notes, links, captions, and related works. Use Export/Import to privately share a copy of your notebook with selected people.</p>
+        <div class="row" style="gap:8px; flex-wrap: wrap; margin-bottom: 12px;">
+          <button id="exportBtn" type="button" class="secondary">Export</button>
+          <button id="importBtn" type="button" class="secondary">Import</button>
+          <input id="importFile" type="file" accept="application/json" class="hidden" />
+        </div>
       <div id="artistList" class="list"></div>
       <p id="emptyState" class="date" style="text-align:center; margin-top:20px; display:none;">No artists yet. Tap "Add Artist" to start.</p>
     </section>
 
     <section id="editorView" class="card hidden">
       <div class="form-grid">
+        <div class="row" style="align-items: center; gap: 10px; flex-wrap: wrap;">
+          <label style="flex:1;">
+            <span>Your name (for contribution log)</span>
+            <input id="contributorName" type="text" placeholder="e.g. Casey" />
+            <p class="hint">Saved on this device so edits can be attributed.</p>
+          </label>
+        </div>
         <div class="row" style="justify-content: space-between; align-items: center; gap: 8px;">
           <span class="hint" id="modeHint">Locked for viewing. Tap "Enable Edit Mode" to make changes or delete.</span>
           <button id="editToggleBtn" type="button" class="secondary">Enable Edit Mode</button>
@@ -439,6 +451,10 @@
           <div class="view-item">
             <span class="view-label">Related Works</span>
             <div id="viewWorks" class="works-grid"></div>
+          </div>
+          <div class="view-item">
+            <span class="view-label">Contributions</span>
+            <div id="viewHistory" class="works-grid"></div>
           </div>
         </div>
 
@@ -504,6 +520,7 @@
 
   <script>
     const STORAGE_KEY = 'artistNotebookData';
+    const CONTRIBUTOR_KEY = 'artistNotebookContributor';
     let artists = [];
     let currentId = null;
     let currentEnrichment = null;
@@ -558,6 +575,15 @@
       localStorage.setItem(STORAGE_KEY, JSON.stringify(artists));
     }
 
+    function loadContributor() {
+      const saved = localStorage.getItem(CONTRIBUTOR_KEY) || '';
+      document.getElementById('contributorName').value = saved;
+    }
+
+    function persistContributor(name) {
+      localStorage.setItem(CONTRIBUTOR_KEY, name);
+    }
+
     function sortArtists() {
       artists.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
     }
@@ -566,6 +592,28 @@
       if (!ts) return '—';
       const date = new Date(ts);
       return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+    }
+
+    function getContributorName() {
+      const name = document.getElementById('contributorName').value.trim();
+      return name || 'Anonymous';
+    }
+
+    function summarizeChanges(prev = {}, next = {}) {
+      if (!prev.id) return 'Created artist';
+      const changes = [];
+      if ((prev.name || '') !== (next.name || '')) changes.push('name');
+      if ((prev.notes || '').trim() !== (next.notes || '').trim()) changes.push('notes');
+      const prevLinks = (prev.links || []).filter(Boolean).join('\n');
+      const nextLinks = (next.links || []).filter(Boolean).join('\n');
+      if (prevLinks !== nextLinks) changes.push('links');
+      const prevImages = JSON.stringify(normalizeImages(prev.images));
+      const nextImages = JSON.stringify(normalizeImages(next.images));
+      if (prevImages !== nextImages) changes.push('photos');
+      const prevWorks = JSON.stringify(normalizeWorks(prev.works));
+      const nextWorks = JSON.stringify(normalizeWorks(next.works));
+      if (prevWorks !== nextWorks) changes.push('related works');
+      return changes.length ? `Updated ${changes.join(', ')}` : 'No visible changes';
     }
 
     function renderList(filter = '') {
@@ -577,12 +625,15 @@
         ? artists.filter(a => {
             const images = normalizeImages(a.images);
             const works = normalizeWorks(a.works);
+            const history = Array.isArray(a.history) ? a.history : [];
             const haystack = [
               a.name || '',
               a.notes || '',
+              a.lastContributor || '',
               ...(a.links || []),
               ...images.map(img => `${img.caption}`),
               ...works.map(w => `${w.title} ${w.year}`),
+              ...history.map(h => `${h.by} ${h.summary}`),
             ]
               .join('\n')
               .toLowerCase();
@@ -623,6 +674,12 @@
         date.textContent = `Updated ${formatDate(artist.updatedAt)}`;
         meta.appendChild(name);
         meta.appendChild(date);
+        if (artist.lastContributor) {
+          const who = document.createElement('p');
+          who.className = 'date';
+          who.textContent = `By ${artist.lastContributor}`;
+          meta.appendChild(who);
+        }
 
         card.appendChild(thumb);
         card.appendChild(meta);
@@ -660,7 +717,7 @@
       renderLinks(artist.links || []);
       renderImages(normalizeImages(artist.images || []));
       renderWorks(normalizeWorksForEdit(artist.works || []));
-      setEditingEnabled(false);
+      setEditingEnabled(false, artist);
     }
 
     function renderLinks(links) {
@@ -813,7 +870,7 @@
       applyDynamicLockState();
     }
 
-    function updateViewPanel({ name = 'Untitled', notes = '', links = [], images = [], works = [] }) {
+    function updateViewPanel({ name = 'Untitled', notes = '', links = [], images = [], works = [], history = [], lastContributor = '' }) {
       document.getElementById('viewName').textContent = name || 'Untitled';
       document.getElementById('viewNotes').textContent = notes?.trim() || 'No notes yet.';
 
@@ -899,6 +956,32 @@
         empty.className = 'view-text';
         empty.textContent = 'No related works yet.';
         worksEl.appendChild(empty);
+      }
+
+      const historyEl = document.getElementById('viewHistory');
+      historyEl.innerHTML = '';
+      const log = Array.isArray(history) ? history : [];
+      const combined = log.slice(-10).reverse();
+      if (combined.length) {
+        combined.forEach(entry => {
+          const card = document.createElement('div');
+          card.className = 'work-card';
+          const who = document.createElement('div');
+          who.className = 'view-label';
+          who.textContent = entry.by || 'Someone';
+          const what = document.createElement('div');
+          what.className = 'view-text';
+          const when = entry.timestamp ? ` • ${formatDate(entry.timestamp)}` : '';
+          what.textContent = `${entry.summary || 'Updated'}${when}`;
+          card.appendChild(who);
+          card.appendChild(what);
+          historyEl.appendChild(card);
+        });
+      } else {
+        const empty = document.createElement('span');
+        empty.className = 'view-text';
+        empty.textContent = lastContributor ? `Last touched by ${lastContributor}.` : 'No contributions recorded yet.';
+        historyEl.appendChild(empty);
       }
     }
 
@@ -1099,6 +1182,8 @@
     }
 
     function saveCurrentArtist() {
+      const contributor = getContributorName();
+      persistContributor(contributor);
       const name = document.getElementById('artistName').value.trim();
       if (!name) {
         alert('Artist name is required');
@@ -1113,10 +1198,13 @@
       if (currentId) {
         const idx = artists.findIndex(a => a.id === currentId);
         if (idx !== -1) {
-          artists[idx] = { ...artists[idx], name, notes, links, images, works, updatedAt: timestamp };
+          const previous = artists[idx];
+          const summary = summarizeChanges(previous, { name, notes, links, images, works });
+          const history = [...(previous.history || []), { by: contributor, timestamp, summary }];
+          artists[idx] = { ...previous, name, notes, links, images, works, updatedAt: timestamp, lastContributor: contributor, history };
         }
       } else {
-        const newArtist = { id: crypto.randomUUID(), name, notes, links, images, works, updatedAt: timestamp };
+        const newArtist = { id: crypto.randomUUID(), name, notes, links, images, works, updatedAt: timestamp, lastContributor: contributor, history: [{ by: contributor, timestamp, summary: 'Created artist' }] };
         artists.push(newArtist);
       }
       sortArtists();
@@ -1141,6 +1229,51 @@
       }
     }
 
+    function exportData() {
+      const payload = JSON.stringify({ artists }, null, 2);
+      const blob = new Blob([payload], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'artist-notebook-export.json';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    async function importDataFromFile(file) {
+      if (!file) return;
+      const text = await file.text();
+      let incoming = [];
+      try {
+        const parsed = JSON.parse(text);
+        if (Array.isArray(parsed)) incoming = parsed;
+        else if (Array.isArray(parsed.artists)) incoming = parsed.artists;
+      } catch (e) {
+        alert('Invalid file. Please choose a JSON export.');
+        return;
+      }
+      if (!incoming.length) {
+        alert('No artists found in this file.');
+        return;
+      }
+      const map = new Map(artists.map(a => [a.id, a]));
+      incoming.forEach(entry => {
+        if (!entry.id) return;
+        const existing = map.get(entry.id);
+        if (!existing || (entry.updatedAt || 0) >= (existing.updatedAt || 0)) {
+          map.set(entry.id, { ...existing, ...entry });
+        }
+      });
+      artists = Array.from(map.values());
+      sortArtists();
+      saveArtists();
+      renderList(document.getElementById('searchInput').value);
+      openList();
+      alert('Import complete. Data stays on your device; share the file privately to limit access.');
+    }
+
     function openList() {
       document.getElementById('editorView').classList.add('hidden');
       document.getElementById('listView').classList.remove('hidden');
@@ -1159,7 +1292,7 @@
       dynamicInputs.forEach(el => (el.disabled = !editingEnabled));
     }
 
-    function setEditingEnabled(enabled) {
+    function setEditingEnabled(enabled, viewData = null) {
       editingEnabled = enabled;
       const currentSnapshot = {
         name: document.getElementById('artistName').value.trim(),
@@ -1199,7 +1332,7 @@
         deleteBtn.classList.add('hidden');
         editPanel.classList.add('hidden');
         viewPanel.classList.remove('hidden');
-        updateViewPanel(currentSnapshot);
+        updateViewPanel(viewData || currentSnapshot);
       }
 
       const toggleBtn = document.getElementById('editToggleBtn');
@@ -1229,12 +1362,21 @@
     document.getElementById('autoFillBtn').addEventListener('click', autoFillFromWeb);
     document.getElementById('editToggleBtn').addEventListener('click', () => setEditingEnabled(!editingEnabled));
     document.getElementById('closeModal').addEventListener('click', closeImageModal);
+    document.getElementById('exportBtn').addEventListener('click', exportData);
+    document.getElementById('importBtn').addEventListener('click', () => document.getElementById('importFile').click());
+    document.getElementById('importFile').addEventListener('change', (e) => {
+      const file = e.target.files?.[0];
+      importDataFromFile(file);
+      e.target.value = '';
+    });
+    document.getElementById('contributorName').addEventListener('input', (e) => persistContributor(e.target.value.trim()));
     document.getElementById('imageModal').addEventListener('click', (e) => {
       if (e.target.classList.contains('modal-backdrop')) closeImageModal();
     });
 
     loadArtists();
     renderList();
+    loadContributor();
     resetEditor();
   </script>
 </body>
