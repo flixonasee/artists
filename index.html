@@ -212,6 +212,46 @@
       font-size: 0.9rem;
     }
 
+    .view-panel {
+      display: grid;
+      gap: 12px;
+      background: #f9fafb;
+      border-radius: var(--radius);
+      padding: 12px;
+      border: 1px solid #e5e7eb;
+    }
+
+    .view-item {
+      display: grid;
+      gap: 6px;
+    }
+
+    .view-label {
+      font-weight: 600;
+      color: #111827;
+      font-size: 0.95rem;
+    }
+
+    .view-text {
+      color: var(--muted);
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .view-tags {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .tag {
+      background: #e5e7eb;
+      color: #111827;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 0.9rem;
+    }
+
     .image-chip {
       position: relative;
     }
@@ -283,41 +323,63 @@
           <span class="hint" id="modeHint">Locked for viewing. Tap "Enable Edit Mode" to make changes or delete.</span>
           <button id="editToggleBtn" type="button" class="secondary">Enable Edit Mode</button>
         </div>
-        <label>
-          <span>Artist Name *</span>
-          <div class="row" style="align-items: center; gap: 8px;">
-            <input id="artistName" type="text" placeholder="Enter artist name" required />
-            <button id="autoFillBtn" type="button" class="secondary" style="white-space: nowrap;">Auto-fill</button>
+
+        <div id="viewPanel" class="view-panel">
+          <div class="view-item">
+            <span class="view-label">Artist</span>
+            <div class="view-text" id="viewName">—</div>
           </div>
-          <p id="autoFillStatus" class="hint" aria-live="polite"></p>
-        </label>
-        <label>
-          <span>Notes</span>
-          <textarea id="artistNotes" placeholder="Ideas, notable works, contacts..."></textarea>
-        </label>
-        <div>
+          <div class="view-item">
+            <span class="view-label">Notes</span>
+            <div class="view-text" id="viewNotes">No notes yet.</div>
+          </div>
+          <div class="view-item">
+            <span class="view-label">Links</span>
+            <div class="view-tags" id="viewLinks"></div>
+          </div>
+          <div class="view-item">
+            <span class="view-label">Photos</span>
+            <div id="viewImages" class="thumb-grid"></div>
+          </div>
+        </div>
+
+        <div id="editPanel" class="form-grid">
+          <label>
+            <span>Artist Name *</span>
+            <div class="row" style="align-items: center; gap: 8px;">
+              <input id="artistName" type="text" placeholder="Enter artist name" required />
+              <button id="autoFillBtn" type="button" class="secondary" style="white-space: nowrap;">Auto-fill</button>
+            </div>
+            <p id="autoFillStatus" class="hint" aria-live="polite"></p>
+          </label>
+          <label>
+            <span>Notes</span>
+            <textarea id="artistNotes" placeholder="Ideas, notable works, contacts..."></textarea>
+          </label>
+          <div>
+            <div class="row" style="justify-content: space-between; align-items: center;">
+              <span>Links</span>
+              <button type="button" class="secondary" id="addLinkBtn">Add Link</button>
+            </div>
+            <div id="linksContainer"></div>
+          </div>
+          <div>
           <div class="row" style="justify-content: space-between; align-items: center;">
-            <span>Links</span>
-            <button type="button" class="secondary" id="addLinkBtn">Add Link</button>
+            <span>Photos</span>
+            <input id="photoInput" type="file" accept="image/*" multiple />
           </div>
-          <div id="linksContainer"></div>
+          <div class="row">
+            <input id="photoUrl" type="url" placeholder="Paste image URL (jpg/png/webp)" />
+            <button id="importUrlBtn" type="button" class="secondary">Import from URL</button>
+          </div>
+          <p class="hint">Tip: On phones, you can use the file picker to take a photo. For web images, paste the image URL above and we'll store a copy offline.</p>
+          <div id="photoPreview" class="thumb-grid"></div>
         </div>
-        <div>
-        <div class="row" style="justify-content: space-between; align-items: center;">
-          <span>Photos</span>
-          <input id="photoInput" type="file" accept="image/*" multiple />
-        </div>
-        <div class="row">
-          <input id="photoUrl" type="url" placeholder="Paste image URL (jpg/png/webp)" />
-          <button id="importUrlBtn" type="button" class="secondary">Import from URL</button>
-        </div>
-        <p class="hint">Tip: On phones, you can use the file picker to take a photo. For web images, paste the image URL above and we'll store a copy offline.</p>
-        <div id="photoPreview" class="thumb-grid"></div>
-      </div>
-        <div class="stacked-buttons">
-          <button id="saveBtn">Save Artist</button>
-          <button id="deleteBtn" class="danger">Delete Artist</button>
-          <button id="backBtn" class="secondary">Back to List</button>
+          <div class="stacked-buttons">
+            <button id="saveBtn">Save Artist</button>
+            <button id="deleteBtn" class="danger">Delete Artist</button>
+            <button id="backBtn" class="secondary">Back to List</button>
+          </div>
         </div>
       </div>
     </section>
@@ -498,6 +560,52 @@
       });
       preview.dataset.images = JSON.stringify(images);
       setEditingEnabled(editingEnabled);
+    }
+
+    function updateViewPanel({ name = 'Untitled', notes = '', links = [], images = [] }) {
+      document.getElementById('viewName').textContent = name || 'Untitled';
+      document.getElementById('viewNotes').textContent = notes?.trim() || 'No notes yet.';
+
+      const linksEl = document.getElementById('viewLinks');
+      linksEl.innerHTML = '';
+      const cleanedLinks = (links || []).filter(Boolean);
+      if (cleanedLinks.length) {
+        cleanedLinks.forEach(link => {
+          const tag = document.createElement('a');
+          tag.href = link;
+          tag.target = '_blank';
+          tag.rel = 'noreferrer';
+          tag.className = 'tag';
+          tag.textContent = link.replace(/^https?:\/\//, '');
+          linksEl.appendChild(tag);
+        });
+      } else {
+        const empty = document.createElement('span');
+        empty.className = 'view-text';
+        empty.textContent = 'No links yet.';
+        linksEl.appendChild(empty);
+      }
+
+      const imagesEl = document.getElementById('viewImages');
+      imagesEl.innerHTML = '';
+      if (images && images.length) {
+        images.forEach((src, idx) => {
+          const img = document.createElement('img');
+          img.src = src;
+          img.alt = `Image ${idx + 1}`;
+          img.style.width = '88px';
+          img.style.height = '88px';
+          img.style.objectFit = 'cover';
+          img.style.borderRadius = '10px';
+          img.style.boxShadow = 'var(--shadow)';
+          imagesEl.appendChild(img);
+        });
+      } else {
+        const empty = document.createElement('span');
+        empty.className = 'view-text';
+        empty.textContent = 'No photos yet.';
+        imagesEl.appendChild(empty);
+      }
     }
 
     function getImagesFromPreview() {
@@ -722,6 +830,13 @@
 
     function setEditingEnabled(enabled) {
       editingEnabled = enabled;
+      const currentSnapshot = {
+        name: document.getElementById('artistName').value.trim(),
+        notes: document.getElementById('artistNotes').value,
+        links: collectLinks(),
+        images: getImagesFromPreview(),
+      };
+
       const inputs = [
         document.getElementById('artistName'),
         document.getElementById('artistNotes'),
@@ -738,6 +853,12 @@
       document.querySelectorAll('#photoPreview button').forEach(btn => (btn.disabled = !enabled));
       document.getElementById('saveBtn').classList.toggle('hidden', !enabled);
       document.getElementById('deleteBtn').classList.toggle('hidden', !enabled);
+      document.getElementById('editPanel').classList.toggle('hidden', !enabled);
+      document.getElementById('viewPanel').classList.toggle('hidden', enabled);
+      if (!enabled) {
+        updateViewPanel(currentSnapshot);
+      }
+
       const toggleBtn = document.getElementById('editToggleBtn');
       toggleBtn.textContent = enabled ? 'Edit Mode On' : 'Enable Edit Mode';
       toggleBtn.classList.toggle('secondary', !enabled);
