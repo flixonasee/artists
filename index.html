@@ -726,7 +726,7 @@
         preview.appendChild(chip);
       });
       preview.dataset.images = JSON.stringify(list);
-      setEditingEnabled(editingEnabled);
+      applyDynamicLockState();
     }
 
     function renderWorks(works = []) {
@@ -810,7 +810,7 @@
       });
 
       container.dataset.works = JSON.stringify(list);
-      setEditingEnabled(editingEnabled);
+      applyDynamicLockState();
     }
 
     function updateViewPanel({ name = 'Untitled', notes = '', links = [], images = [], works = [] }) {
@@ -1147,6 +1147,18 @@
       resetEditor();
     }
 
+    function applyDynamicLockState() {
+      const dynamicInputs = [
+        ...document.querySelectorAll('#linksContainer input'),
+        ...document.querySelectorAll('.image-caption'),
+        ...document.querySelectorAll('#worksContainer input'),
+        ...document.querySelectorAll('#worksContainer .work-file'),
+        ...document.querySelectorAll('#worksContainer button'),
+        ...document.querySelectorAll('#photoPreview button'),
+      ];
+      dynamicInputs.forEach(el => (el.disabled = !editingEnabled));
+    }
+
     function setEditingEnabled(enabled) {
       editingEnabled = enabled;
       const currentSnapshot = {
@@ -1160,11 +1172,8 @@
       const inputs = [
         document.getElementById('artistName'),
         document.getElementById('artistNotes'),
-        ...document.querySelectorAll('#linksContainer input'),
         document.getElementById('photoInput'),
         document.getElementById('photoUrl'),
-        ...document.querySelectorAll('.image-caption'),
-        ...document.querySelectorAll('#worksContainer input'),
       ];
       inputs.forEach(el => {
         el.disabled = !enabled;
@@ -1172,10 +1181,8 @@
       document.getElementById('addLinkBtn').disabled = !enabled;
       document.getElementById('importUrlBtn').disabled = !enabled;
       document.getElementById('autoFillBtn').disabled = !enabled;
-      document.querySelectorAll('#photoPreview button').forEach(btn => (btn.disabled = !enabled));
-      document.querySelectorAll('#worksContainer button').forEach(btn => (btn.disabled = !enabled));
-      document.querySelectorAll('#worksContainer .work-file').forEach(btn => (btn.disabled = !enabled));
       document.getElementById('addWorkBtn').disabled = !enabled;
+      applyDynamicLockState();
       document.getElementById('saveBtn').classList.toggle('hidden', !enabled);
       document.getElementById('deleteBtn').classList.toggle('hidden', !enabled);
       document.getElementById('editPanel').classList.toggle('hidden', !enabled);
