@@ -1183,11 +1183,22 @@
       document.getElementById('autoFillBtn').disabled = !enabled;
       document.getElementById('addWorkBtn').disabled = !enabled;
       applyDynamicLockState();
-      document.getElementById('saveBtn').classList.toggle('hidden', !enabled);
-      document.getElementById('deleteBtn').classList.toggle('hidden', !enabled);
-      document.getElementById('editPanel').classList.toggle('hidden', !enabled);
-      document.getElementById('viewPanel').classList.toggle('hidden', enabled);
-      if (!enabled) {
+
+      const saveBtn = document.getElementById('saveBtn');
+      const deleteBtn = document.getElementById('deleteBtn');
+      const editPanel = document.getElementById('editPanel');
+      const viewPanel = document.getElementById('viewPanel');
+
+      if (enabled) {
+        saveBtn.classList.remove('hidden');
+        deleteBtn.classList.remove('hidden');
+        editPanel.classList.remove('hidden');
+        viewPanel.classList.add('hidden');
+      } else {
+        saveBtn.classList.add('hidden');
+        deleteBtn.classList.add('hidden');
+        editPanel.classList.add('hidden');
+        viewPanel.classList.remove('hidden');
         updateViewPanel(currentSnapshot);
       }
 
