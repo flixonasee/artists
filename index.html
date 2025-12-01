@@ -206,6 +206,12 @@
       margin-top: 10px;
     }
 
+    .hint {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
     .image-chip {
       position: relative;
     }
@@ -266,6 +272,7 @@
       <div class="list-controls">
         <input id="searchInput" type="text" placeholder="Search artists..." aria-label="Search artists" />
       </div>
+      <p class="hint" style="margin-bottom:16px;">Quick start: tap "Add Artist", fill name/notes, paste any links, and save. To add photos, upload from your device or import a web image URL in the editor.</p>
       <div id="artistList" class="list"></div>
       <p id="emptyState" class="date" style="text-align:center; margin-top:20px; display:none;">No artists yet. Tap "Add Artist" to start.</p>
     </section>
@@ -288,12 +295,17 @@
           <div id="linksContainer"></div>
         </div>
         <div>
-          <div class="row" style="justify-content: space-between; align-items: center;">
-            <span>Photos</span>
-            <input id="photoInput" type="file" accept="image/*" multiple />
-          </div>
-          <div id="photoPreview" class="thumb-grid"></div>
+        <div class="row" style="justify-content: space-between; align-items: center;">
+          <span>Photos</span>
+          <input id="photoInput" type="file" accept="image/*" multiple />
         </div>
+        <div class="row">
+          <input id="photoUrl" type="url" placeholder="Paste image URL (jpg/png/webp)" />
+          <button id="importUrlBtn" type="button" class="secondary">Import from URL</button>
+        </div>
+        <p class="hint">Tip: On phones, you can use the file picker to take a photo. For web images, paste the image URL above and we'll store a copy offline.</p>
+        <div id="photoPreview" class="thumb-grid"></div>
+      </div>
         <div class="stacked-buttons">
           <button id="saveBtn">Save Artist</button>
           <button id="deleteBtn" class="danger">Delete Artist</button>
@@ -490,6 +502,34 @@
       return inputs.map(i => i.value.trim()).filter(Boolean);
     }
 
+    async function importImageFromUrl() {
+      const urlInput = document.getElementById('photoUrl');
+      const url = urlInput.value.trim();
+      if (!url) return;
+      try {
+        const base64 = await fetchImageAsBase64(url);
+        const existing = getImagesFromPreview();
+        existing.push(base64);
+        renderImages(existing);
+        urlInput.value = '';
+      } catch (e) {
+        console.error('Failed to import image', e);
+        alert('Could not fetch that image. Try another URL or download the file first.');
+      }
+    }
+
+    async function fetchImageAsBase64(url) {
+      const response = await fetch(url, { mode: 'cors' });
+      if (!response.ok) throw new Error('Network error');
+      const blob = await response.blob();
+      return await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    }
+
     function saveCurrentArtist() {
       const name = document.getElementById('artistName').value.trim();
       if (!name) {
@@ -545,6 +585,7 @@
     document.getElementById('addLinkBtn').addEventListener('click', () => addLinkField());
     document.getElementById('searchInput').addEventListener('input', (e) => renderList(e.target.value));
     document.getElementById('photoInput').addEventListener('change', (e) => handleFileInput(e.target.files));
+    document.getElementById('importUrlBtn').addEventListener('click', importImageFromUrl);
 
     loadArtists();
     renderList();
