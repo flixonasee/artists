@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Artist Notebook</title>
+  <style>
+    :root {
+      --bg: #f3f4f6;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --accent: #2563eb;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      --radius: 14px;
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: var(--bg);
+      padding: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 1.1rem;
+      letter-spacing: 0.01em;
+    }
+
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+
+    .list-controls {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    input[type="text"], textarea, input[type="url"] {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      font-size: 1rem;
+      background: #f9fafb;
+      transition: border 0.2s, box-shadow 0.2s;
+    }
+
+    input[type="text"]:focus,
+    textarea:focus,
+    input[type="url"]:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+      background: #fff;
+    }
+
+    textarea {
+      min-height: 120px;
+      resize: vertical;
+    }
+
+    button {
+      border: none;
+      border-radius: 12px;
+      padding: 12px 16px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: transform 0.1s ease, box-shadow 0.2s ease;
+      background: var(--accent);
+      color: #fff;
+      box-shadow: 0 8px 20px rgba(37, 99, 235, 0.25);
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 12px 24px rgba(37, 99, 235, 0.25);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    .secondary {
+      background: #e5e7eb;
+      color: #111827;
+      box-shadow: none;
+    }
+
+    .danger {
+      background: #ef4444;
+      box-shadow: 0 8px 20px rgba(239, 68, 68, 0.25);
+    }
+
+    .list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 12px;
+    }
+
+    .artist-card {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      cursor: pointer;
+      padding: 12px;
+    }
+
+    .thumb {
+      width: 64px;
+      height: 64px;
+      border-radius: 12px;
+      object-fit: cover;
+      background: #e5e7eb;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted);
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      flex-shrink: 0;
+    }
+
+    .meta {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .name {
+      margin: 0 0 4px;
+      font-weight: 600;
+      font-size: 1.05rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .date {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .form-grid {
+      display: grid;
+      gap: 14px;
+    }
+
+    .row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .link-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .link-row button {
+      padding: 10px 12px;
+      box-shadow: none;
+    }
+
+    .thumb-grid {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+
+    .image-chip {
+      position: relative;
+    }
+
+    .image-chip img {
+      width: 88px;
+      height: 88px;
+      object-fit: cover;
+      border-radius: 10px;
+      box-shadow: var(--shadow);
+      background: #f3f4f6;
+    }
+
+    .image-chip button {
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      border-radius: 50%;
+      padding: 6px 8px;
+      font-size: 0.8rem;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    .stacked-buttons {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+
+    @media (max-width: 600px) {
+      header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .artist-card {
+        padding: 10px;
+      }
+
+      .thumb {
+        width: 56px;
+        height: 56px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Artist Notebook</h1>
+    <div class="row">
+      <button id="addArtistBtn">Add Artist</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <section id="listView" class="card">
+      <div class="list-controls">
+        <input id="searchInput" type="text" placeholder="Search artists..." aria-label="Search artists" />
+      </div>
+      <div id="artistList" class="list"></div>
+      <p id="emptyState" class="date" style="text-align:center; margin-top:20px; display:none;">No artists yet. Tap "Add Artist" to start.</p>
+    </section>
+
+    <section id="editorView" class="card hidden">
+      <div class="form-grid">
+        <label>
+          <span>Artist Name *</span>
+          <input id="artistName" type="text" placeholder="Enter artist name" required />
+        </label>
+        <label>
+          <span>Notes</span>
+          <textarea id="artistNotes" placeholder="Ideas, notable works, contacts..."></textarea>
+        </label>
+        <div>
+          <div class="row" style="justify-content: space-between; align-items: center;">
+            <span>Links</span>
+            <button type="button" class="secondary" id="addLinkBtn">Add Link</button>
+          </div>
+          <div id="linksContainer"></div>
+        </div>
+        <div>
+          <div class="row" style="justify-content: space-between; align-items: center;">
+            <span>Photos</span>
+            <input id="photoInput" type="file" accept="image/*" multiple />
+          </div>
+          <div id="photoPreview" class="thumb-grid"></div>
+        </div>
+        <div class="stacked-buttons">
+          <button id="saveBtn">Save Artist</button>
+          <button id="deleteBtn" class="danger">Delete Artist</button>
+          <button id="backBtn" class="secondary">Back to List</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const STORAGE_KEY = 'artistNotebookData';
+    let artists = [];
+    let currentId = null;
+
+    function loadArtists() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        artists = raw ? JSON.parse(raw) : [];
+      } catch (e) {
+        console.error('Failed to load artists', e);
+        artists = [];
+      }
+      sortArtists();
+    }
+
+    function saveArtists() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(artists));
+    }
+
+    function sortArtists() {
+      artists.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+    }
+
+    function formatDate(ts) {
+      if (!ts) return '—';
+      const date = new Date(ts);
+      return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+    }
+
+    function renderList(filter = '') {
+      const listEl = document.getElementById('artistList');
+      const emptyEl = document.getElementById('emptyState');
+      listEl.innerHTML = '';
+      const term = filter.trim().toLowerCase();
+      const filtered = term ? artists.filter(a => a.name.toLowerCase().includes(term)) : artists;
+      emptyEl.style.display = filtered.length ? 'none' : 'block';
+
+      filtered.forEach(artist => {
+        const card = document.createElement('div');
+        card.className = 'card artist-card';
+        card.addEventListener('click', () => openEditor(artist.id));
+
+        const thumb = document.createElement('div');
+        thumb.className = 'thumb';
+        if (artist.images && artist.images.length) {
+          const img = document.createElement('img');
+          img.src = artist.images[0];
+          img.alt = `${artist.name} thumbnail`;
+          img.style.width = '100%';
+          img.style.height = '100%';
+          img.style.borderRadius = 'inherit';
+          img.style.objectFit = 'cover';
+          thumb.innerHTML = '';
+          thumb.appendChild(img);
+        } else {
+          thumb.textContent = artist.name.slice(0, 2).toUpperCase();
+        }
+
+        const meta = document.createElement('div');
+        meta.className = 'meta';
+        const name = document.createElement('p');
+        name.className = 'name';
+        name.textContent = artist.name || 'Untitled';
+        const date = document.createElement('p');
+        date.className = 'date';
+        date.textContent = `Updated ${formatDate(artist.updatedAt)}`;
+        meta.appendChild(name);
+        meta.appendChild(date);
+
+        card.appendChild(thumb);
+        card.appendChild(meta);
+        listEl.appendChild(card);
+      });
+    }
+
+    function resetEditor() {
+      currentId = null;
+      document.getElementById('artistName').value = '';
+      document.getElementById('artistNotes').value = '';
+      document.getElementById('linksContainer').innerHTML = '';
+      document.getElementById('photoPreview').innerHTML = '';
+      addLinkField();
+    }
+
+    function openEditor(id = null) {
+      document.getElementById('listView').classList.add('hidden');
+      document.getElementById('editorView').classList.remove('hidden');
+      if (!id) {
+        resetEditor();
+        return;
+      }
+      const artist = artists.find(a => a.id === id);
+      if (!artist) return;
+      currentId = artist.id;
+      document.getElementById('artistName').value = artist.name || '';
+      document.getElementById('artistNotes').value = artist.notes || '';
+      renderLinks(artist.links || []);
+      renderImages(artist.images || []);
+    }
+
+    function renderLinks(links) {
+      const container = document.getElementById('linksContainer');
+      container.innerHTML = '';
+      if (!links.length) links = [''];
+      links.forEach(link => addLinkField(link));
+    }
+
+    function addLinkField(value = '') {
+      const container = document.getElementById('linksContainer');
+      const row = document.createElement('div');
+      row.className = 'link-row';
+      const input = document.createElement('input');
+      input.type = 'url';
+      input.placeholder = 'https://...';
+      input.value = value;
+      const removeBtn = document.createElement('button');
+      removeBtn.type = 'button';
+      removeBtn.className = 'secondary';
+      removeBtn.textContent = '–';
+      removeBtn.addEventListener('click', () => {
+        if (container.children.length > 1) row.remove();
+        else input.value = '';
+      });
+      row.appendChild(input);
+      row.appendChild(removeBtn);
+      container.appendChild(row);
+    }
+
+    function renderImages(images) {
+      const preview = document.getElementById('photoPreview');
+      preview.innerHTML = '';
+      images.forEach((src, idx) => {
+        const chip = document.createElement('div');
+        chip.className = 'image-chip';
+        const img = document.createElement('img');
+        img.src = src;
+        img.alt = `Image ${idx + 1}`;
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'danger';
+        btn.textContent = '×';
+        btn.addEventListener('click', () => {
+          images.splice(idx, 1);
+          renderImages(images);
+        });
+        chip.appendChild(img);
+        chip.appendChild(btn);
+        preview.appendChild(chip);
+      });
+      preview.dataset.images = JSON.stringify(images);
+    }
+
+    function getImagesFromPreview() {
+      try {
+        const preview = document.getElementById('photoPreview');
+        const parsed = JSON.parse(preview.dataset.images || '[]');
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (e) {
+        return [];
+      }
+    }
+
+    async function handleFileInput(files) {
+      if (!files || !files.length) return;
+      const existing = getImagesFromPreview();
+      for (const file of files) {
+        const base64 = await fileToBase64(file);
+        existing.push(base64);
+      }
+      renderImages(existing);
+    }
+
+    function fileToBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function collectLinks() {
+      const inputs = [...document.querySelectorAll('#linksContainer input')];
+      return inputs.map(i => i.value.trim()).filter(Boolean);
+    }
+
+    function saveCurrentArtist() {
+      const name = document.getElementById('artistName').value.trim();
+      if (!name) {
+        alert('Artist name is required');
+        return;
+      }
+      const notes = document.getElementById('artistNotes').value;
+      const links = collectLinks();
+      const images = getImagesFromPreview();
+      const timestamp = Date.now();
+
+      if (currentId) {
+        const idx = artists.findIndex(a => a.id === currentId);
+        if (idx !== -1) {
+          artists[idx] = { ...artists[idx], name, notes, links, images, updatedAt: timestamp };
+        }
+      } else {
+        const newArtist = { id: crypto.randomUUID(), name, notes, links, images, updatedAt: timestamp };
+        artists.push(newArtist);
+      }
+      sortArtists();
+      saveArtists();
+      renderList(document.getElementById('searchInput').value);
+      openList();
+    }
+
+    function deleteCurrentArtist() {
+      if (!currentId) {
+        resetEditor();
+        openList();
+        return;
+      }
+      const artist = artists.find(a => a.id === currentId);
+      if (!artist) return;
+      if (confirm(`Delete ${artist.name}?`)) {
+        artists = artists.filter(a => a.id !== currentId);
+        saveArtists();
+        renderList(document.getElementById('searchInput').value);
+        openList();
+      }
+    }
+
+    function openList() {
+      document.getElementById('editorView').classList.add('hidden');
+      document.getElementById('listView').classList.remove('hidden');
+      resetEditor();
+    }
+
+    document.getElementById('addArtistBtn').addEventListener('click', () => openEditor());
+    document.getElementById('backBtn').addEventListener('click', openList);
+    document.getElementById('saveBtn').addEventListener('click', saveCurrentArtist);
+    document.getElementById('deleteBtn').addEventListener('click', deleteCurrentArtist);
+    document.getElementById('addLinkBtn').addEventListener('click', () => addLinkField());
+    document.getElementById('searchInput').addEventListener('input', (e) => renderList(e.target.value));
+    document.getElementById('photoInput').addEventListener('change', (e) => handleFileInput(e.target.files));
+
+    loadArtists();
+    renderList();
+    resetEditor();
+  </script>
+</body>
+</html>
