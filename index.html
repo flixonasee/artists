@@ -6,18 +6,19 @@
   <title>Artist Notebook</title>
   <style>
     :root {
-      --bg: #f3f4f6;
+      --bg: #f2f4f7;
       --card: #ffffff;
-      --text: #1f2937;
-      --muted: #6b7280;
-      --accent: #2563eb;
+      --text: #0f172a;
+      --muted: #64748b;
+      --accent: #7c3aed;
       --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
       --radius: 14px;
     }
 
     * {
       box-sizing: border-box;
-      font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+      font-family: "Manrope", "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+      letter-spacing: 0.01em;
     }
 
     body {
@@ -43,7 +44,7 @@
     h1 {
       margin: 0;
       font-size: 1.1rem;
-      letter-spacing: 0.01em;
+      letter-spacing: 0.03em;
     }
 
     .container {
@@ -104,7 +105,7 @@
       transition: transform 0.1s ease, box-shadow 0.2s ease;
       background: var(--accent);
       color: #fff;
-      box-shadow: 0 8px 20px rgba(37, 99, 235, 0.25);
+      box-shadow: 0 10px 24px rgba(124, 58, 237, 0.25);
     }
 
     button:hover {
@@ -275,6 +276,99 @@
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
     }
 
+    .image-caption {
+      width: 100%;
+      margin-top: 6px;
+      font-size: 0.95rem;
+    }
+
+    .view-photo {
+      cursor: zoom-in;
+      position: relative;
+      display: inline-flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .view-caption {
+      color: var(--muted);
+      font-size: 0.9rem;
+      max-width: 160px;
+      word-break: break-word;
+    }
+
+    .works-grid {
+      display: grid;
+      gap: 10px;
+    }
+
+    .work-card {
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 12px;
+      background: #f9fafb;
+      display: grid;
+      gap: 8px;
+    }
+
+    .work-preview {
+      width: 100%;
+      border-radius: 12px;
+      object-fit: cover;
+      max-height: 220px;
+      background: #e2e8f0;
+    }
+
+    .tag.badge {
+      background: rgba(124, 58, 237, 0.12);
+      color: #5b21b6;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.65);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      backdrop-filter: blur(2px);
+      z-index: 50;
+    }
+
+    .modal-card {
+      background: #0b1220;
+      color: #e2e8f0;
+      border-radius: 16px;
+      padding: 12px;
+      max-width: 90vw;
+      max-height: 90vh;
+      display: grid;
+      gap: 10px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+    }
+
+    .modal-card img {
+      max-width: 100%;
+      max-height: 70vh;
+      border-radius: 12px;
+      object-fit: contain;
+      background: #0f172a;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .modal-close {
+      background: #334155;
+      color: #e2e8f0;
+      box-shadow: none;
+    }
+
     .stacked-buttons {
       display: flex;
       gap: 10px;
@@ -299,20 +393,21 @@
     }
   </style>
 </head>
-<body>
-  <header>
-    <h1>Artist Notebook</h1>
-    <div class="row">
-      <button id="addArtistBtn">Add Artist</button>
-    </div>
-  </header>
+  <body>
+    <header>
+      <h1>Artist Notebook</h1>
+      <div class="row">
+        <button id="homeBtn" class="secondary">Home</button>
+        <button id="addArtistBtn">Add Artist</button>
+      </div>
+    </header>
 
   <main class="container">
     <section id="listView" class="card">
         <div class="list-controls">
-          <input id="searchInput" type="text" placeholder="Search artists, notes, links..." aria-label="Search artists" />
+          <input id="searchInput" type="text" placeholder="Search names, notes, links, captions, works..." aria-label="Search artists" />
         </div>
-        <p class="hint" style="margin-bottom:16px;">Quick start: tap "Add Artist", fill name/notes, paste any links, and save. To add photos, upload from your device or import a web image URL in the editor. Search looks inside names, notes, and links.</p>
+        <p class="hint" style="margin-bottom:16px;">Quick start: tap "Add Artist", fill name/notes, paste any links, and save. To add photos, upload from your device or import a web image URL in the editor. Search looks inside names, notes, links, captions, and related works.</p>
       <div id="artistList" class="list"></div>
       <p id="emptyState" class="date" style="text-align:center; margin-top:20px; display:none;">No artists yet. Tap "Add Artist" to start.</p>
     </section>
@@ -340,6 +435,10 @@
           <div class="view-item">
             <span class="view-label">Photos</span>
             <div id="viewImages" class="thumb-grid"></div>
+          </div>
+          <div class="view-item">
+            <span class="view-label">Related Works</span>
+            <div id="viewWorks" class="works-grid"></div>
           </div>
         </div>
 
@@ -375,6 +474,13 @@
           <p class="hint">Tip: On phones, you can use the file picker to take a photo. For web images, paste the image URL above and we'll store a copy offline.</p>
           <div id="photoPreview" class="thumb-grid"></div>
         </div>
+          <div>
+            <div class="row" style="justify-content: space-between; align-items: center;">
+              <span>Related Works</span>
+              <button type="button" class="secondary" id="addWorkBtn">Add Work</button>
+            </div>
+            <div id="worksContainer" class="works-grid"></div>
+          </div>
           <div class="stacked-buttons">
             <button id="saveBtn">Save Artist</button>
             <button id="deleteBtn" class="danger">Delete Artist</button>
@@ -383,6 +489,17 @@
         </div>
       </div>
     </section>
+    <div id="imageModal" class="hidden">
+      <div class="modal-backdrop" role="dialog" aria-modal="true">
+        <div class="modal-card">
+          <div class="modal-header">
+            <div id="modalCaption"></div>
+            <button type="button" id="closeModal" class="modal-close">Close</button>
+          </div>
+          <img id="modalImage" alt="Expanded art" />
+        </div>
+      </div>
+    </div>
   </main>
 
   <script>
@@ -391,6 +508,26 @@
     let currentId = null;
     let currentEnrichment = null;
     let editingEnabled = true;
+
+    function normalizeImages(images = []) {
+      return (images || [])
+        .map(img =>
+          typeof img === 'string'
+            ? { src: img, caption: '' }
+            : { src: img.src || img.image || '', caption: img.caption || '' }
+        )
+        .filter(img => img.src);
+    }
+
+    function normalizeWorks(works = []) {
+      return (works || [])
+        .map(w => ({
+          title: w.title || '',
+          year: w.year || '',
+          image: w.image || w.src || '',
+        }))
+        .filter(w => w.title || w.year || w.image);
+    }
 
     function setAutoFillStatus(message = '', tone = 'muted') {
       const el = document.getElementById('autoFillStatus');
@@ -430,10 +567,14 @@
       const term = filter.trim().toLowerCase();
       const filtered = term
         ? artists.filter(a => {
+            const images = normalizeImages(a.images);
+            const works = normalizeWorks(a.works);
             const haystack = [
               a.name || '',
               a.notes || '',
               ...(a.links || []),
+              ...images.map(img => `${img.caption}`),
+              ...works.map(w => `${w.title} ${w.year}`),
             ]
               .join('\n')
               .toLowerCase();
@@ -449,9 +590,10 @@
 
         const thumb = document.createElement('div');
         thumb.className = 'thumb';
-        if (artist.images && artist.images.length) {
+        const normalizedImages = normalizeImages(artist.images || []);
+        if (normalizedImages.length) {
           const img = document.createElement('img');
-          img.src = artist.images[0];
+          img.src = normalizedImages[0].src;
           img.alt = `${artist.name} thumbnail`;
           img.style.width = '100%';
           img.style.height = '100%';
@@ -486,8 +628,11 @@
       document.getElementById('artistNotes').value = '';
       document.getElementById('linksContainer').innerHTML = '';
       document.getElementById('photoPreview').innerHTML = '';
+      document.getElementById('worksContainer').innerHTML = '';
       setAutoFillStatus('');
       addLinkField();
+      renderImages([]);
+      renderWorks([]);
     }
 
     function openEditor(id = null) {
@@ -505,7 +650,8 @@
       document.getElementById('artistName').value = artist.name || '';
       document.getElementById('artistNotes').value = artist.notes || '';
       renderLinks(artist.links || []);
-      renderImages(artist.images || []);
+      renderImages(normalizeImages(artist.images || []));
+      renderWorks(normalizeWorks(artist.works || []));
       setEditingEnabled(false);
     }
 
@@ -538,31 +684,128 @@
     }
 
     function renderImages(images) {
+      const normalized = normalizeImages(images);
       const preview = document.getElementById('photoPreview');
       preview.innerHTML = '';
-      images.forEach((src, idx) => {
+      const list = normalized.length ? normalized : [];
+      list.forEach((item, idx) => {
         const chip = document.createElement('div');
         chip.className = 'image-chip';
         const img = document.createElement('img');
-        img.src = src;
-        img.alt = `Image ${idx + 1}`;
+        img.src = item.src;
+        img.alt = item.caption || `Image ${idx + 1}`;
+        img.addEventListener('click', () => openImageModal(item.src, item.caption || 'Photo'));
+        const caption = document.createElement('input');
+        caption.type = 'text';
+        caption.placeholder = 'Caption (optional)';
+        caption.value = item.caption || '';
+        caption.className = 'image-caption';
+        caption.addEventListener('input', () => {
+          list[idx].caption = caption.value;
+          preview.dataset.images = JSON.stringify(list);
+        });
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'danger';
         btn.textContent = '×';
         btn.addEventListener('click', () => {
-          images.splice(idx, 1);
-          renderImages(images);
+          list.splice(idx, 1);
+          renderImages(list);
         });
         chip.appendChild(img);
         chip.appendChild(btn);
+        chip.appendChild(caption);
         preview.appendChild(chip);
       });
-      preview.dataset.images = JSON.stringify(images);
+      preview.dataset.images = JSON.stringify(list);
       setEditingEnabled(editingEnabled);
     }
 
-    function updateViewPanel({ name = 'Untitled', notes = '', links = [], images = [] }) {
+    function renderWorks(works = []) {
+      const normalized = normalizeWorks(works);
+      const container = document.getElementById('worksContainer');
+      container.innerHTML = '';
+      const list = normalized.length ? normalized : [{ title: '', year: '', image: '' }];
+
+      list.forEach((work, idx) => {
+        const card = document.createElement('div');
+        card.className = 'work-card';
+
+        const headerRow = document.createElement('div');
+        headerRow.className = 'row';
+        headerRow.style.justifyContent = 'space-between';
+        const badge = document.createElement('span');
+        badge.className = 'tag badge';
+        badge.textContent = 'Work';
+        const remove = document.createElement('button');
+        remove.type = 'button';
+        remove.className = 'secondary';
+        remove.textContent = 'Remove';
+        remove.addEventListener('click', () => {
+          if (list.length === 1) {
+            list[0] = { title: '', year: '', image: '' };
+            renderWorks(list);
+          } else {
+            list.splice(idx, 1);
+            renderWorks(list);
+          }
+        });
+        headerRow.appendChild(badge);
+        headerRow.appendChild(remove);
+
+        const titleInput = document.createElement('input');
+        titleInput.type = 'text';
+        titleInput.placeholder = 'Title';
+        titleInput.value = work.title || '';
+        titleInput.className = 'work-title';
+        titleInput.addEventListener('input', () => {
+          list[idx].title = titleInput.value;
+          container.dataset.works = JSON.stringify(list);
+        });
+
+        const yearInput = document.createElement('input');
+        yearInput.type = 'text';
+        yearInput.placeholder = 'Year';
+        yearInput.value = work.year || '';
+        yearInput.className = 'work-year';
+        yearInput.addEventListener('input', () => {
+          list[idx].year = yearInput.value;
+          container.dataset.works = JSON.stringify(list);
+        });
+
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.accept = 'image/*';
+        fileInput.className = 'work-file';
+        fileInput.addEventListener('change', async (e) => {
+          if (!e.target.files?.length) return;
+          const base64 = await fileToBase64(e.target.files[0]);
+          list[idx].image = base64;
+          renderWorks(list);
+        });
+
+        if (work.image) {
+          const preview = document.createElement('img');
+          preview.src = work.image;
+          preview.alt = work.title || 'Work image';
+          preview.className = 'work-preview';
+          preview.addEventListener('click', () => openImageModal(work.image, work.title || 'Work'));
+          card.appendChild(preview);
+        }
+
+        card.appendChild(headerRow);
+        card.appendChild(titleInput);
+        card.appendChild(yearInput);
+        card.appendChild(fileInput);
+
+        container.appendChild(card);
+      });
+
+      container.dataset.works = JSON.stringify(list);
+      setEditingEnabled(editingEnabled);
+    }
+
+    function updateViewPanel({ name = 'Untitled', notes = '', links = [], images = [], works = [] }) {
       document.getElementById('viewName').textContent = name || 'Untitled';
       document.getElementById('viewNotes').textContent = notes?.trim() || 'No notes yet.';
 
@@ -588,23 +831,66 @@
 
       const imagesEl = document.getElementById('viewImages');
       imagesEl.innerHTML = '';
-      if (images && images.length) {
-        images.forEach((src, idx) => {
+      const normalizedImages = normalizeImages(images);
+      if (normalizedImages.length) {
+        normalizedImages.forEach((item, idx) => {
+          const wrapper = document.createElement('div');
+          wrapper.className = 'view-photo';
           const img = document.createElement('img');
-          img.src = src;
-          img.alt = `Image ${idx + 1}`;
-          img.style.width = '88px';
-          img.style.height = '88px';
+          img.src = item.src;
+          img.alt = item.caption || `Image ${idx + 1}`;
+          img.style.width = '104px';
+          img.style.height = '104px';
           img.style.objectFit = 'cover';
-          img.style.borderRadius = '10px';
+          img.style.borderRadius = '12px';
           img.style.boxShadow = 'var(--shadow)';
-          imagesEl.appendChild(img);
+          img.addEventListener('click', () => openImageModal(item.src, item.caption || name));
+          wrapper.appendChild(img);
+          if (item.caption) {
+            const cap = document.createElement('span');
+            cap.className = 'view-caption';
+            cap.textContent = item.caption;
+            wrapper.appendChild(cap);
+          }
+          imagesEl.appendChild(wrapper);
         });
       } else {
         const empty = document.createElement('span');
         empty.className = 'view-text';
         empty.textContent = 'No photos yet.';
         imagesEl.appendChild(empty);
+      }
+
+      const worksEl = document.getElementById('viewWorks');
+      worksEl.innerHTML = '';
+      const normalizedWorks = normalizeWorks(works);
+      if (normalizedWorks.length) {
+        normalizedWorks.forEach((work, idx) => {
+          const card = document.createElement('div');
+          card.className = 'work-card';
+          const title = document.createElement('div');
+          title.className = 'view-label';
+          title.textContent = work.title || `Work ${idx + 1}`;
+          const meta = document.createElement('div');
+          meta.className = 'view-text';
+          meta.textContent = work.year ? `Year: ${work.year}` : 'Year not set';
+          card.appendChild(title);
+          card.appendChild(meta);
+          if (work.image) {
+            const img = document.createElement('img');
+            img.src = work.image;
+            img.alt = work.title || 'Work image';
+            img.className = 'work-preview';
+            img.addEventListener('click', () => openImageModal(work.image, work.title || 'Work'));
+            card.appendChild(img);
+          }
+          worksEl.appendChild(card);
+        });
+      } else {
+        const empty = document.createElement('span');
+        empty.className = 'view-text';
+        empty.textContent = 'No related works yet.';
+        worksEl.appendChild(empty);
       }
     }
 
@@ -618,12 +904,22 @@
       }
     }
 
+    function getWorksFromUI() {
+      try {
+        const container = document.getElementById('worksContainer');
+        const parsed = JSON.parse(container.dataset.works || '[]');
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (e) {
+        return [];
+      }
+    }
+
     async function handleFileInput(files) {
       if (!files || !files.length) return;
       const existing = getImagesFromPreview();
       for (const file of files) {
         const base64 = await fileToBase64(file);
-        existing.push(base64);
+        existing.push({ src: base64, caption: '' });
       }
       renderImages(existing);
     }
@@ -649,7 +945,7 @@
       try {
         const base64 = await fetchImageAsBase64(url);
         const existing = getImagesFromPreview();
-        existing.push(base64);
+        existing.push({ src: base64, caption: '' });
         renderImages(existing);
         urlInput.value = '';
       } catch (e) {
@@ -668,6 +964,20 @@
         reader.onerror = reject;
         reader.readAsDataURL(blob);
       });
+    }
+
+    function openImageModal(src, caption = '') {
+      const modal = document.getElementById('imageModal');
+      document.getElementById('modalImage').src = src;
+      document.getElementById('modalCaption').textContent = caption;
+      modal.classList.remove('hidden');
+    }
+
+    function closeImageModal() {
+      const modal = document.getElementById('imageModal');
+      modal.classList.add('hidden');
+      document.getElementById('modalImage').src = '';
+      document.getElementById('modalCaption').textContent = '';
     }
 
     async function autoFillFromWeb() {
@@ -789,15 +1099,16 @@
       const notes = document.getElementById('artistNotes').value;
       const links = collectLinks();
       const images = getImagesFromPreview();
+      const works = normalizeWorks(getWorksFromUI());
       const timestamp = Date.now();
 
       if (currentId) {
         const idx = artists.findIndex(a => a.id === currentId);
         if (idx !== -1) {
-          artists[idx] = { ...artists[idx], name, notes, links, images, updatedAt: timestamp };
+          artists[idx] = { ...artists[idx], name, notes, links, images, works, updatedAt: timestamp };
         }
       } else {
-        const newArtist = { id: crypto.randomUUID(), name, notes, links, images, updatedAt: timestamp };
+        const newArtist = { id: crypto.randomUUID(), name, notes, links, images, works, updatedAt: timestamp };
         artists.push(newArtist);
       }
       sortArtists();
@@ -835,6 +1146,7 @@
         notes: document.getElementById('artistNotes').value,
         links: collectLinks(),
         images: getImagesFromPreview(),
+        works: getWorksFromUI(),
       };
 
       const inputs = [
@@ -843,6 +1155,8 @@
         ...document.querySelectorAll('#linksContainer input'),
         document.getElementById('photoInput'),
         document.getElementById('photoUrl'),
+        ...document.querySelectorAll('.image-caption'),
+        ...document.querySelectorAll('#worksContainer input'),
       ];
       inputs.forEach(el => {
         el.disabled = !enabled;
@@ -851,6 +1165,9 @@
       document.getElementById('importUrlBtn').disabled = !enabled;
       document.getElementById('autoFillBtn').disabled = !enabled;
       document.querySelectorAll('#photoPreview button').forEach(btn => (btn.disabled = !enabled));
+      document.querySelectorAll('#worksContainer button').forEach(btn => (btn.disabled = !enabled));
+      document.querySelectorAll('#worksContainer .work-file').forEach(btn => (btn.disabled = !enabled));
+      document.getElementById('addWorkBtn').disabled = !enabled;
       document.getElementById('saveBtn').classList.toggle('hidden', !enabled);
       document.getElementById('deleteBtn').classList.toggle('hidden', !enabled);
       document.getElementById('editPanel').classList.toggle('hidden', !enabled);
@@ -860,25 +1177,35 @@
       }
 
       const toggleBtn = document.getElementById('editToggleBtn');
-      toggleBtn.textContent = enabled ? 'Edit Mode On' : 'Enable Edit Mode';
+      toggleBtn.textContent = enabled ? 'View mode' : 'Edit mode';
       toggleBtn.classList.toggle('secondary', !enabled);
       toggleBtn.classList.toggle('danger', false);
       const modeHint = document.getElementById('modeHint');
       modeHint.textContent = enabled
         ? 'Editing enabled. You can update details or delete this artist.'
-        : 'Locked for viewing. Tap "Enable Edit Mode" to make changes or delete.';
+        : 'Locked for viewing. Tap "Edit mode" to make changes or delete.';
     }
 
     document.getElementById('addArtistBtn').addEventListener('click', () => openEditor());
+    document.getElementById('homeBtn').addEventListener('click', openList);
     document.getElementById('backBtn').addEventListener('click', openList);
     document.getElementById('saveBtn').addEventListener('click', saveCurrentArtist);
     document.getElementById('deleteBtn').addEventListener('click', deleteCurrentArtist);
     document.getElementById('addLinkBtn').addEventListener('click', () => addLinkField());
+    document.getElementById('addWorkBtn').addEventListener('click', () => {
+      const works = getWorksFromUI();
+      works.push({ title: '', year: '', image: '' });
+      renderWorks(works);
+    });
     document.getElementById('searchInput').addEventListener('input', (e) => renderList(e.target.value));
     document.getElementById('photoInput').addEventListener('change', (e) => handleFileInput(e.target.files));
     document.getElementById('importUrlBtn').addEventListener('click', importImageFromUrl);
     document.getElementById('autoFillBtn').addEventListener('click', autoFillFromWeb);
     document.getElementById('editToggleBtn').addEventListener('click', () => setEditingEnabled(!editingEnabled));
+    document.getElementById('closeModal').addEventListener('click', closeImageModal);
+    document.getElementById('imageModal').addEventListener('click', (e) => {
+      if (e.target.classList.contains('modal-backdrop')) closeImageModal();
+    });
 
     loadArtists();
     renderList();
