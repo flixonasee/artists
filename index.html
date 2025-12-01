@@ -269,16 +269,20 @@
 
   <main class="container">
     <section id="listView" class="card">
-      <div class="list-controls">
-        <input id="searchInput" type="text" placeholder="Search artists..." aria-label="Search artists" />
-      </div>
-      <p class="hint" style="margin-bottom:16px;">Quick start: tap "Add Artist", fill name/notes, paste any links, and save. To add photos, upload from your device or import a web image URL in the editor.</p>
+        <div class="list-controls">
+          <input id="searchInput" type="text" placeholder="Search artists, notes, links..." aria-label="Search artists" />
+        </div>
+        <p class="hint" style="margin-bottom:16px;">Quick start: tap "Add Artist", fill name/notes, paste any links, and save. To add photos, upload from your device or import a web image URL in the editor. Search looks inside names, notes, and links.</p>
       <div id="artistList" class="list"></div>
       <p id="emptyState" class="date" style="text-align:center; margin-top:20px; display:none;">No artists yet. Tap "Add Artist" to start.</p>
     </section>
 
     <section id="editorView" class="card hidden">
       <div class="form-grid">
+        <div class="row" style="justify-content: space-between; align-items: center; gap: 8px;">
+          <span class="hint" id="modeHint">Locked for viewing. Tap "Enable Edit Mode" to make changes or delete.</span>
+          <button id="editToggleBtn" type="button" class="secondary">Enable Edit Mode</button>
+        </div>
         <label>
           <span>Artist Name *</span>
           <div class="row" style="align-items: center; gap: 8px;">
@@ -324,6 +328,7 @@
     let artists = [];
     let currentId = null;
     let currentEnrichment = null;
+    let editingEnabled = true;
 
     function setAutoFillStatus(message = '', tone = 'muted') {
       const el = document.getElementById('autoFillStatus');
@@ -361,7 +366,18 @@
       const emptyEl = document.getElementById('emptyState');
       listEl.innerHTML = '';
       const term = filter.trim().toLowerCase();
-      const filtered = term ? artists.filter(a => a.name.toLowerCase().includes(term)) : artists;
+      const filtered = term
+        ? artists.filter(a => {
+            const haystack = [
+              a.name || '',
+              a.notes || '',
+              ...(a.links || []),
+            ]
+              .join('\n')
+              .toLowerCase();
+            return haystack.includes(term);
+          })
+        : artists;
       emptyEl.style.display = filtered.length ? 'none' : 'block';
 
       filtered.forEach(artist => {
@@ -418,6 +434,7 @@
       setAutoFillStatus('');
       if (!id) {
         resetEditor();
+        setEditingEnabled(true);
         return;
       }
       const artist = artists.find(a => a.id === id);
@@ -427,6 +444,7 @@
       document.getElementById('artistNotes').value = artist.notes || '';
       renderLinks(artist.links || []);
       renderImages(artist.images || []);
+      setEditingEnabled(false);
     }
 
     function renderLinks(links) {
@@ -479,6 +497,7 @@
         preview.appendChild(chip);
       });
       preview.dataset.images = JSON.stringify(images);
+      setEditingEnabled(editingEnabled);
     }
 
     function getImagesFromPreview() {
@@ -701,6 +720,34 @@
       resetEditor();
     }
 
+    function setEditingEnabled(enabled) {
+      editingEnabled = enabled;
+      const inputs = [
+        document.getElementById('artistName'),
+        document.getElementById('artistNotes'),
+        ...document.querySelectorAll('#linksContainer input'),
+        document.getElementById('photoInput'),
+        document.getElementById('photoUrl'),
+      ];
+      inputs.forEach(el => {
+        el.disabled = !enabled;
+      });
+      document.getElementById('addLinkBtn').disabled = !enabled;
+      document.getElementById('importUrlBtn').disabled = !enabled;
+      document.getElementById('autoFillBtn').disabled = !enabled;
+      document.querySelectorAll('#photoPreview button').forEach(btn => (btn.disabled = !enabled));
+      document.getElementById('saveBtn').classList.toggle('hidden', !enabled);
+      document.getElementById('deleteBtn').classList.toggle('hidden', !enabled);
+      const toggleBtn = document.getElementById('editToggleBtn');
+      toggleBtn.textContent = enabled ? 'Edit Mode On' : 'Enable Edit Mode';
+      toggleBtn.classList.toggle('secondary', !enabled);
+      toggleBtn.classList.toggle('danger', false);
+      const modeHint = document.getElementById('modeHint');
+      modeHint.textContent = enabled
+        ? 'Editing enabled. You can update details or delete this artist.'
+        : 'Locked for viewing. Tap "Enable Edit Mode" to make changes or delete.';
+    }
+
     document.getElementById('addArtistBtn').addEventListener('click', () => openEditor());
     document.getElementById('backBtn').addEventListener('click', openList);
     document.getElementById('saveBtn').addEventListener('click', saveCurrentArtist);
@@ -710,6 +757,7 @@
     document.getElementById('photoInput').addEventListener('change', (e) => handleFileInput(e.target.files));
     document.getElementById('importUrlBtn').addEventListener('click', importImageFromUrl);
     document.getElementById('autoFillBtn').addEventListener('click', autoFillFromWeb);
+    document.getElementById('editToggleBtn').addEventListener('click', () => setEditingEnabled(!editingEnabled));
 
     loadArtists();
     renderList();
