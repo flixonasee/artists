@@ -1632,13 +1632,50 @@
       resetEditor();
     }
 
+    let memoryPassword = DEFAULT_PASSWORD;
+    let memoryAccessGranted = false;
+
     function getStoredPassword() {
-      return localStorage.getItem(PASSWORD_KEY) || DEFAULT_PASSWORD;
+      try {
+        const saved = localStorage.getItem(PASSWORD_KEY);
+        if (saved) {
+          memoryPassword = saved;
+          return saved;
+        }
+      } catch (e) {
+        console.warn('Falling back to in-memory password', e);
+      }
+      return memoryPassword || DEFAULT_PASSWORD;
     }
 
     function setStoredPassword(value = '') {
-      if (!value.trim()) return;
-      localStorage.setItem(PASSWORD_KEY, value.trim());
+      const cleaned = value.trim();
+      if (!cleaned) return;
+      memoryPassword = cleaned;
+      try {
+        localStorage.setItem(PASSWORD_KEY, cleaned);
+      } catch (e) {
+        console.warn('Could not persist password to localStorage; using memory fallback', e);
+      }
+    }
+
+    function persistAccessGrant() {
+      memoryAccessGranted = true;
+      try {
+        sessionStorage.setItem(ACCESS_SESSION_KEY, 'granted');
+      } catch (e) {
+        console.warn('Session storage unavailable; access tracked in memory only', e);
+      }
+    }
+
+    function hasAccessGrant() {
+      if (memoryAccessGranted) return true;
+      try {
+        return sessionStorage.getItem(ACCESS_SESSION_KEY) === 'granted';
+      } catch (e) {
+        console.warn('Session storage unavailable; relying on memory access flag', e);
+        return memoryAccessGranted;
+      }
     }
 
     function showLock() {
@@ -1676,7 +1713,7 @@
         return;
       }
       if (entered === getStoredPassword()) {
-        sessionStorage.setItem(ACCESS_SESSION_KEY, 'granted');
+        persistAccessGrant();
         setLockStatus('');
         hideLock();
         initializeApp();
@@ -1686,8 +1723,7 @@
     }
 
     function checkAccess() {
-      const granted = sessionStorage.getItem(ACCESS_SESSION_KEY) === 'granted';
-      if (granted) {
+      if (hasAccessGrant()) {
         hideLock();
         initializeApp();
       } else {
