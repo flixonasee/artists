@@ -1468,6 +1468,14 @@
       renderLinks(merged.length ? merged : ['']);
     }
 
+    function generateId() {
+      if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+        return crypto.randomUUID();
+      }
+      const segment = () => Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
+      return `id-${segment()}-${segment()}-${segment()}-${segment()}`;
+    }
+
     function saveCurrentArtist() {
       const contributor = getContributorName();
       persistContributor(contributor);
@@ -1492,7 +1500,7 @@
           artists[idx] = { ...previous, name, notes, links, images, works, tags, updatedAt: timestamp, lastContributor: contributor, history };
         }
       } else {
-        const newArtist = { id: crypto.randomUUID(), name, notes, links, images, works, tags, updatedAt: timestamp, lastContributor: contributor, history: [{ by: contributor, timestamp, summary: 'Created artist' }] };
+        const newArtist = { id: generateId(), name, notes, links, images, works, tags, updatedAt: timestamp, lastContributor: contributor, history: [{ by: contributor, timestamp, summary: 'Created artist' }] };
         artists.push(newArtist);
       }
       sortArtists();
