@@ -1,0 +1,1713 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Artist Notebook</title>
+  <style>
+    :root {
+      --bg: #f2f4f7;
+      --card: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --accent: #7c3aed;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      --radius: 14px;
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: "Manrope", "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+      letter-spacing: 0.01em;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: var(--bg);
+      padding: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 1.1rem;
+      letter-spacing: 0.03em;
+    }
+
+    h1 a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+
+    .list-controls {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .tag-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .tag-filter {
+      padding: 8px 12px;
+      background: #e5e7eb;
+      border-radius: 999px;
+      color: #0f172a;
+      border: 1px solid transparent;
+      cursor: pointer;
+      font-size: 0.95rem;
+    }
+
+    .tag-filter.active {
+      background: rgba(124, 58, 237, 0.12);
+      color: var(--accent);
+      border-color: var(--accent);
+    }
+
+    input[type="text"], textarea, input[type="url"] {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      font-size: 1rem;
+      background: #f9fafb;
+      transition: border 0.2s, box-shadow 0.2s;
+    }
+
+    input[type="text"]:focus,
+    textarea:focus,
+    input[type="url"]:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+      background: #fff;
+    }
+
+    textarea {
+      min-height: 120px;
+      resize: vertical;
+    }
+
+    button {
+      border: none;
+      border-radius: 12px;
+      padding: 12px 16px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: transform 0.1s ease, box-shadow 0.2s ease;
+      background: var(--accent);
+      color: #fff;
+      box-shadow: 0 10px 24px rgba(124, 58, 237, 0.25);
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 12px 24px rgba(37, 99, 235, 0.25);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    .secondary {
+      background: #e5e7eb;
+      color: #111827;
+      box-shadow: none;
+    }
+
+    .danger {
+      background: #ef4444;
+      box-shadow: 0 8px 20px rgba(239, 68, 68, 0.25);
+    }
+
+    .list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 12px;
+    }
+
+    .artist-card {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      cursor: pointer;
+      padding: 12px;
+    }
+
+    .thumb {
+      width: 64px;
+      height: 64px;
+      border-radius: 12px;
+      object-fit: cover;
+      background: #e5e7eb;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted);
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      flex-shrink: 0;
+    }
+
+    .meta {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .name {
+      margin: 0 0 4px;
+      font-weight: 600;
+      font-size: 1.05rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .date {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .card-tags {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-top: 6px;
+    }
+
+    .form-grid {
+      display: grid;
+      gap: 14px;
+    }
+
+    .row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .link-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .link-row button {
+      padding: 10px 12px;
+      box-shadow: none;
+    }
+
+    .thumb-grid {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+
+    .hint {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .view-panel {
+      display: grid;
+      gap: 12px;
+      background: #f9fafb;
+      border-radius: var(--radius);
+      padding: 12px;
+      border: 1px solid #e5e7eb;
+    }
+
+    .view-item {
+      display: grid;
+      gap: 6px;
+    }
+
+    .view-label {
+      font-weight: 600;
+      color: #111827;
+      font-size: 0.95rem;
+    }
+
+    .view-text {
+      color: var(--muted);
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .view-tags {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .tag {
+      background: #e5e7eb;
+      color: #111827;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 0.9rem;
+    }
+
+    .tag-editor {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .tag-editor .tag-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      background: #e5e7eb;
+      border-radius: 999px;
+      font-size: 0.95rem;
+    }
+
+    .tag-editor .remove-tag {
+      border: none;
+      background: transparent;
+      color: #0f172a;
+      cursor: pointer;
+      font-weight: 700;
+      padding: 0 2px;
+    }
+
+    .tag-input {
+      min-width: 180px;
+      flex: 1;
+    }
+
+    .image-chip {
+      position: relative;
+    }
+
+    .image-chip img {
+      width: 88px;
+      height: 88px;
+      object-fit: cover;
+      border-radius: 10px;
+      box-shadow: var(--shadow);
+      background: #f3f4f6;
+    }
+
+    .image-chip button {
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      border-radius: 50%;
+      padding: 6px 8px;
+      font-size: 0.8rem;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    .image-caption {
+      width: 100%;
+      margin-top: 6px;
+      font-size: 0.95rem;
+    }
+
+    .view-photo {
+      cursor: zoom-in;
+      position: relative;
+      display: inline-flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .view-caption {
+      color: var(--muted);
+      font-size: 0.9rem;
+      max-width: 160px;
+      word-break: break-word;
+    }
+
+    .works-grid {
+      display: grid;
+      gap: 10px;
+    }
+
+    .work-card {
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 12px;
+      background: #f9fafb;
+      display: grid;
+      gap: 8px;
+    }
+
+    .work-preview {
+      width: 100%;
+      border-radius: 12px;
+      object-fit: cover;
+      max-height: 220px;
+      background: #e2e8f0;
+    }
+
+    .tag.badge {
+      background: rgba(124, 58, 237, 0.12);
+      color: #5b21b6;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.65);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      backdrop-filter: blur(2px);
+      z-index: 50;
+    }
+
+    .modal-card {
+      background: #0b1220;
+      color: #e2e8f0;
+      border-radius: 16px;
+      padding: 12px;
+      max-width: 90vw;
+      max-height: 90vh;
+      display: grid;
+      gap: 10px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+    }
+
+    .modal-card img {
+      max-width: 100%;
+      max-height: 70vh;
+      border-radius: 12px;
+      object-fit: contain;
+      background: #0f172a;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .modal-close {
+      background: #334155;
+      color: #e2e8f0;
+      box-shadow: none;
+    }
+
+    .muted {
+      color: var(--muted);
+      margin-top: 4px;
+      display: block;
+    }
+
+    .stacked-buttons {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+
+    @media (max-width: 600px) {
+      header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .artist-card {
+        padding: 10px;
+      }
+
+      .thumb {
+        width: 56px;
+        height: 56px;
+      }
+    }
+  </style>
+</head>
+  <body>
+    <header>
+      <h1><a id="titleLink" href="#">Artist Notebook</a></h1>
+      <div class="row">
+        <button id="addArtistBtn">Add Artist</button>
+      </div>
+    </header>
+
+  <main class="container" id="appShell">
+    <section id="listView" class="card">
+        <div class="tag-bar" id="tagBar"></div>
+        <div class="list-controls">
+          <input id="searchInput" type="text" placeholder="Search names, notes, links, captions, works, tags..." aria-label="Search artists" />
+        </div>
+      <div id="artistList" class="list"></div>
+      <p id="emptyState" class="date" style="text-align:center; margin-top:20px; display:none;">No artists yet. Tap "Add Artist" to start.</p>
+    </section>
+
+    <section id="editorView" class="card hidden">
+      <div class="form-grid">
+        <div class="row" style="align-items: center; gap: 10px; flex-wrap: wrap;">
+          <label style="flex:1;">
+            <span>Your name (for contribution log)</span>
+            <input id="contributorName" type="text" placeholder="e.g. Casey" />
+            <p class="hint">Saved on this device so edits can be attributed.</p>
+          </label>
+        </div>
+        <div id="viewPanel" class="view-panel">
+          <div class="view-item">
+            <span class="view-label">Artist</span>
+            <div class="view-text" id="viewName">—</div>
+          </div>
+          <div class="view-item">
+            <span class="view-label">Tags</span>
+            <div class="view-tags" id="viewTags"></div>
+          </div>
+          <div class="view-item">
+            <span class="view-label">Notes</span>
+            <div class="view-text" id="viewNotes">No notes yet.</div>
+          </div>
+          <div class="view-item">
+            <span class="view-label">Links</span>
+            <div class="view-tags" id="viewLinks"></div>
+          </div>
+          <div class="view-item">
+            <span class="view-label">Photos</span>
+            <div id="viewImages" class="thumb-grid"></div>
+          </div>
+          <div class="view-item">
+            <span class="view-label">Related Works</span>
+            <div id="viewWorks" class="works-grid"></div>
+          </div>
+          <div class="view-item">
+            <span class="view-label">Contributions</span>
+            <div id="viewHistory" class="works-grid"></div>
+          </div>
+        </div>
+        <div class="row" id="modeRow" style="justify-content: space-between; align-items: center; gap: 8px;">
+          <span class="hint" id="modeHint">Locked for viewing. Tap "Edit mode" to make changes or delete.</span>
+          <button id="editToggleBtn" type="button" class="secondary">Edit mode</button>
+        </div>
+
+        <div id="editPanel" class="form-grid hidden">
+          <label>
+            <span>Artist Name *</span>
+            <div class="row" style="align-items: center; gap: 8px;">
+              <input id="artistName" type="text" placeholder="Enter artist name" required />
+              <button id="autoFillBtn" type="button" class="secondary" style="white-space: nowrap;">Auto-fill</button>
+            </div>
+            <p id="autoFillStatus" class="hint" aria-live="polite"></p>
+          </label>
+          <label>
+            <span>Notes</span>
+            <textarea id="artistNotes" placeholder="Ideas, notable works, contacts..."></textarea>
+          </label>
+          <div>
+            <span>Tags</span>
+            <div id="tagsEditor" class="tag-editor"></div>
+          </div>
+          <div>
+            <div class="row" style="justify-content: space-between; align-items: center;">
+              <span>Links</span>
+              <button type="button" class="secondary" id="addLinkBtn">Add Link</button>
+            </div>
+            <div id="linksContainer"></div>
+          </div>
+          <div>
+          <div class="row" style="justify-content: space-between; align-items: center;">
+            <span>Photos</span>
+            <input id="photoInput" type="file" accept="image/*" multiple />
+          </div>
+          <div class="row">
+            <input id="photoUrl" type="url" placeholder="Paste image URL (jpg/png/webp)" />
+            <button id="importUrlBtn" type="button" class="secondary">Import from URL</button>
+          </div>
+          <p class="hint">Tip: On phones, you can use the file picker to take a photo. For web images, paste the image URL above and we'll store a copy offline.</p>
+          <div id="photoPreview" class="thumb-grid"></div>
+        </div>
+          <div>
+            <div class="row" style="justify-content: space-between; align-items: center;">
+              <span>Related Works</span>
+              <button type="button" class="secondary" id="addWorkBtn">Add Work</button>
+            </div>
+            <div id="worksContainer" class="works-grid"></div>
+          </div>
+          <div>
+            <div class="row" style="justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+              <span>Shared Directory</span>
+              <span id="remoteStatus" class="hint"></span>
+            </div>
+            <div class="row" style="flex-direction: column; gap: 8px;">
+              <input id="remoteReadUrl" type="url" placeholder="Remote JSON read URL (GitHub Pages, etc.)" />
+              <input id="remoteWriteUrl" type="url" placeholder="Remote write endpoint (POST/PUT)" />
+              <input id="remoteToken" type="password" placeholder="Token or password for backend (optional)" />
+              <p class="hint">Remote URLs let both of you load/save shared data. For now, there is no app password gate.</p>
+            </div>
+          </div>
+          <div class="stacked-buttons">
+            <button id="saveBtn">Save Artist</button>
+            <button id="deleteBtn" class="danger">Delete Artist</button>
+            <button id="backBtn" class="secondary">Back to List</button>
+          </div>
+        </div>
+      </div>
+    </section>
+    <div id="imageModal" class="hidden">
+      <div class="modal-backdrop" role="dialog" aria-modal="true">
+        <div class="modal-card">
+          <div class="modal-header">
+            <div id="modalCaption"></div>
+            <button type="button" id="closeModal" class="modal-close">Close</button>
+          </div>
+          <img id="modalImage" alt="Expanded art" />
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const STORAGE_KEY = 'artistNotebookData';
+    const CONTRIBUTOR_KEY = 'artistNotebookContributor';
+    const REMOTE_CONFIG_KEY = 'artistNotebookRemoteConfig';
+    let artists = [];
+    let currentId = null;
+    let currentEnrichment = null;
+    let editingEnabled = true;
+    let selectedTag = '';
+    let remoteConfig = null;
+
+    function normalizeImages(images = []) {
+      return (images || [])
+        .map(img =>
+          typeof img === 'string'
+            ? { src: img, caption: '' }
+            : { src: img.src || img.image || '', caption: img.caption || '' }
+        )
+        .filter(img => img.src);
+    }
+
+    function normalizeWorks(works = []) {
+      return (works || [])
+        .map(w => ({
+          title: w.title || '',
+          year: w.year || '',
+          image: w.image || w.src || '',
+        }))
+        .filter(w => w.title || w.year || w.image);
+    }
+
+    function normalizeWorksForEdit(works = []) {
+      return (works || []).map(w => ({
+        title: w.title || '',
+        year: w.year || '',
+        image: w.image || w.src || '',
+      }));
+    }
+
+    function normalizeTags(tags = []) {
+      return Array.from(new Set((tags || []).map(t => (t || '').trim()).filter(Boolean)));
+    }
+
+    function setAutoFillStatus(message = '', tone = 'muted') {
+      const el = document.getElementById('autoFillStatus');
+      el.textContent = message;
+      el.style.color = tone === 'error' ? '#b91c1c' : 'var(--muted)';
+    }
+
+    function loadArtists() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        artists = raw ? JSON.parse(raw) : [];
+        artists = artists.map(a => ({ ...a, tags: normalizeTags(a.tags) }));
+      } catch (e) {
+        console.error('Failed to load artists', e);
+        artists = [];
+      }
+      sortArtists();
+    }
+
+    function saveArtists() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(artists));
+    }
+
+    function loadContributor() {
+      const saved = localStorage.getItem(CONTRIBUTOR_KEY) || '';
+      document.getElementById('contributorName').value = saved;
+    }
+
+    function persistContributor(name) {
+      localStorage.setItem(CONTRIBUTOR_KEY, name);
+    }
+
+    function loadRemoteConfig() {
+      try {
+        const raw = localStorage.getItem(REMOTE_CONFIG_KEY);
+        return raw ? JSON.parse(raw) : { readUrl: '', writeUrl: '', token: '' };
+      } catch (_) {
+        return { readUrl: '', writeUrl: '', token: '' };
+      }
+    }
+
+    function saveRemoteConfig(config) {
+      remoteConfig = config;
+      localStorage.setItem(REMOTE_CONFIG_KEY, JSON.stringify(config));
+    }
+
+    function populateRemoteFields() {
+      if (!remoteConfig) return;
+      document.getElementById('remoteReadUrl').value = remoteConfig.readUrl || '';
+      document.getElementById('remoteWriteUrl').value = remoteConfig.writeUrl || '';
+      document.getElementById('remoteToken').value = remoteConfig.token || '';
+    }
+
+    function collectRemoteFields() {
+      return {
+        readUrl: document.getElementById('remoteReadUrl').value.trim(),
+        writeUrl: document.getElementById('remoteWriteUrl').value.trim(),
+        token: document.getElementById('remoteToken').value.trim(),
+      };
+    }
+
+    function sortArtists() {
+      artists.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+    }
+
+    function setRemoteStatus(message = '', tone = 'muted') {
+      const el = document.getElementById('remoteStatus');
+      if (!el) return;
+      el.textContent = message;
+      el.style.color = tone === 'error' ? '#b91c1c' : 'var(--muted)';
+    }
+
+    function formatDate(ts) {
+      if (!ts) return '—';
+      const date = new Date(ts);
+      return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+    }
+
+    function getContributorName() {
+      const name = document.getElementById('contributorName').value.trim();
+      return name || 'Anonymous';
+    }
+
+    function summarizeChanges(prev = {}, next = {}) {
+      if (!prev.id) return 'Created artist';
+      const changes = [];
+      if ((prev.name || '') !== (next.name || '')) changes.push('name');
+      if ((prev.notes || '').trim() !== (next.notes || '').trim()) changes.push('notes');
+      const prevLinks = (prev.links || []).filter(Boolean).join('\n');
+      const nextLinks = (next.links || []).filter(Boolean).join('\n');
+      if (prevLinks !== nextLinks) changes.push('links');
+      const prevTags = normalizeTags(prev.tags).join(',');
+      const nextTags = normalizeTags(next.tags).join(',');
+      if (prevTags !== nextTags) changes.push('tags');
+      const prevImages = JSON.stringify(normalizeImages(prev.images));
+      const nextImages = JSON.stringify(normalizeImages(next.images));
+      if (prevImages !== nextImages) changes.push('photos');
+      const prevWorks = JSON.stringify(normalizeWorks(prev.works));
+      const nextWorks = JSON.stringify(normalizeWorks(next.works));
+      if (prevWorks !== nextWorks) changes.push('related works');
+      return changes.length ? `Updated ${changes.join(', ')}` : 'No visible changes';
+    }
+
+    function renderList(filter = '') {
+      const listEl = document.getElementById('artistList');
+      const emptyEl = document.getElementById('emptyState');
+      listEl.innerHTML = '';
+      const term = (filter || '').trim().toLowerCase();
+      const filtered = artists.filter(a => {
+        const hasTag = !selectedTag || normalizeTags(a.tags).includes(selectedTag);
+        if (!hasTag) return false;
+        if (!term) return true;
+        const images = normalizeImages(a.images);
+        const works = normalizeWorks(a.works);
+        const history = Array.isArray(a.history) ? a.history : [];
+        const haystack = [
+          a.name || '',
+          a.notes || '',
+          a.lastContributor || '',
+          ...(a.links || []),
+          ...normalizeTags(a.tags),
+          ...images.map(img => `${img.caption}`),
+          ...works.map(w => `${w.title} ${w.year}`),
+          ...history.map(h => `${h.by} ${h.summary}`),
+        ]
+          .join('\n')
+          .toLowerCase();
+        return haystack.includes(term);
+      });
+      emptyEl.style.display = filtered.length ? 'none' : 'block';
+
+      filtered.forEach(artist => {
+        const card = document.createElement('div');
+        card.className = 'card artist-card';
+        card.addEventListener('click', () => openEditor(artist.id));
+
+        const thumb = document.createElement('div');
+        thumb.className = 'thumb';
+        const normalizedImages = normalizeImages(artist.images || []);
+        if (normalizedImages.length) {
+          const img = document.createElement('img');
+          img.src = normalizedImages[0].src;
+          img.alt = `${artist.name} thumbnail`;
+          img.style.width = '100%';
+          img.style.height = '100%';
+          img.style.borderRadius = 'inherit';
+          img.style.objectFit = 'cover';
+          thumb.innerHTML = '';
+          thumb.appendChild(img);
+        } else {
+          thumb.textContent = artist.name.slice(0, 2).toUpperCase();
+        }
+
+        const meta = document.createElement('div');
+        meta.className = 'meta';
+        const name = document.createElement('p');
+        name.className = 'name';
+        name.textContent = artist.name || 'Untitled';
+        const date = document.createElement('p');
+        date.className = 'date';
+        date.textContent = `Updated ${formatDate(artist.updatedAt)}`;
+        meta.appendChild(name);
+        meta.appendChild(date);
+        if (artist.lastContributor) {
+          const who = document.createElement('p');
+          who.className = 'date';
+          who.textContent = `By ${artist.lastContributor}`;
+          meta.appendChild(who);
+        }
+
+        const tagRow = document.createElement('div');
+        tagRow.className = 'card-tags';
+        normalizeTags(artist.tags).forEach(tag => {
+          const chip = document.createElement('span');
+          chip.className = 'tag';
+          chip.textContent = tag;
+          tagRow.appendChild(chip);
+        });
+        if (tagRow.children.length) meta.appendChild(tagRow);
+
+        card.appendChild(thumb);
+        card.appendChild(meta);
+        listEl.appendChild(card);
+      });
+    }
+
+    function resetEditor() {
+      currentId = null;
+      document.getElementById('artistName').value = '';
+      document.getElementById('artistNotes').value = '';
+      document.getElementById('linksContainer').innerHTML = '';
+      document.getElementById('photoPreview').innerHTML = '';
+      document.getElementById('worksContainer').innerHTML = '';
+      renderTagsEditor([]);
+      setAutoFillStatus('');
+      addLinkField();
+      renderImages([]);
+      renderWorks([]);
+    }
+
+    function openEditor(id = null) {
+      document.getElementById('listView').classList.add('hidden');
+      document.getElementById('editorView').classList.remove('hidden');
+      setAutoFillStatus('');
+      if (!id) {
+        resetEditor();
+        setEditingEnabled(true);
+        return;
+      }
+      const artist = artists.find(a => a.id === id);
+      if (!artist) return;
+      currentId = artist.id;
+      document.getElementById('artistName').value = artist.name || '';
+      document.getElementById('artistNotes').value = artist.notes || '';
+      renderLinks(artist.links || []);
+      renderTagsEditor(artist.tags || []);
+      renderImages(normalizeImages(artist.images || []));
+      renderWorks(normalizeWorksForEdit(artist.works || []));
+      setEditingEnabled(false, artist);
+    }
+
+    function renderLinks(links) {
+      const container = document.getElementById('linksContainer');
+      container.innerHTML = '';
+      if (!links.length) links = [''];
+      links.forEach(link => addLinkField(link));
+    }
+
+    function addLinkField(value = '') {
+      const container = document.getElementById('linksContainer');
+      const row = document.createElement('div');
+      row.className = 'link-row';
+      const input = document.createElement('input');
+      input.type = 'url';
+      input.placeholder = 'https://...';
+      input.value = value;
+      const removeBtn = document.createElement('button');
+      removeBtn.type = 'button';
+      removeBtn.className = 'secondary';
+      removeBtn.textContent = '–';
+      removeBtn.addEventListener('click', () => {
+        if (container.children.length > 1) row.remove();
+        else input.value = '';
+      });
+      row.appendChild(input);
+      row.appendChild(removeBtn);
+      container.appendChild(row);
+    }
+
+    function renderTagsEditor(tags = []) {
+      const container = document.getElementById('tagsEditor');
+      container.innerHTML = '';
+      const list = normalizeTags(tags);
+
+      const render = () => {
+        container.innerHTML = '';
+        const existing = document.createElement('div');
+        existing.className = 'tag-editor';
+
+        list.forEach(tag => {
+          const pill = document.createElement('span');
+          pill.className = 'tag-pill';
+          pill.textContent = tag;
+          const remove = document.createElement('button');
+          remove.type = 'button';
+          remove.className = 'remove-tag';
+          remove.textContent = '×';
+          remove.addEventListener('click', () => {
+            const idx = list.indexOf(tag);
+            if (idx >= 0) {
+              list.splice(idx, 1);
+              render();
+            }
+          });
+          pill.appendChild(remove);
+          existing.appendChild(pill);
+        });
+
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.placeholder = 'Add tag and press Enter';
+        input.className = 'tag-input';
+        input.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            const value = input.value.trim();
+            if (value && !list.includes(value)) {
+              list.push(value);
+              input.value = '';
+              render();
+            }
+          }
+        });
+
+        existing.appendChild(input);
+        container.appendChild(existing);
+        container.dataset.tags = JSON.stringify(list);
+        applyDynamicLockState();
+      };
+
+      render();
+    }
+
+    function getTagsFromUI() {
+      const container = document.getElementById('tagsEditor');
+      if (!container?.dataset?.tags) return [];
+      try {
+        return normalizeTags(JSON.parse(container.dataset.tags));
+      } catch (_) {
+        return [];
+      }
+    }
+
+    function renderTagFilter() {
+      const bar = document.getElementById('tagBar');
+      if (!bar) return;
+      const unique = new Set();
+      artists.forEach(a => normalizeTags(a.tags).forEach(t => unique.add(t)));
+      bar.innerHTML = '';
+      if (selectedTag && !unique.has(selectedTag)) selectedTag = '';
+      if (!unique.size) return;
+      Array.from(unique)
+        .sort((a, b) => a.localeCompare(b))
+        .forEach(tag => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = `tag-filter${selectedTag === tag ? ' active' : ''}`;
+          btn.textContent = tag;
+          btn.addEventListener('click', () => {
+            selectedTag = selectedTag === tag ? '' : tag;
+            renderTagFilter();
+            renderList(document.getElementById('searchInput').value);
+          });
+          bar.appendChild(btn);
+        });
+    }
+
+    function renderImages(images) {
+      const normalized = normalizeImages(images);
+      const preview = document.getElementById('photoPreview');
+      preview.innerHTML = '';
+      const list = normalized.length ? normalized : [];
+      list.forEach((item, idx) => {
+        const chip = document.createElement('div');
+        chip.className = 'image-chip';
+        const img = document.createElement('img');
+        img.src = item.src;
+        img.alt = item.caption || `Image ${idx + 1}`;
+        img.addEventListener('click', () => openImageModal(item.src, item.caption || 'Photo'));
+        const caption = document.createElement('input');
+        caption.type = 'text';
+        caption.placeholder = 'Caption (optional)';
+        caption.value = item.caption || '';
+        caption.className = 'image-caption';
+        caption.addEventListener('input', () => {
+          list[idx].caption = caption.value;
+          preview.dataset.images = JSON.stringify(list);
+        });
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'danger';
+        btn.textContent = '×';
+        btn.addEventListener('click', () => {
+          list.splice(idx, 1);
+          renderImages(list);
+        });
+        chip.appendChild(img);
+        chip.appendChild(btn);
+        chip.appendChild(caption);
+        preview.appendChild(chip);
+      });
+      preview.dataset.images = JSON.stringify(list);
+      applyDynamicLockState();
+    }
+
+    function renderWorks(works = []) {
+      const normalized = normalizeWorksForEdit(works);
+      const container = document.getElementById('worksContainer');
+      container.innerHTML = '';
+      const list = normalized.length ? normalized : [{ title: '', year: '', image: '' }];
+
+      list.forEach((work, idx) => {
+        const card = document.createElement('div');
+        card.className = 'work-card';
+
+        const headerRow = document.createElement('div');
+        headerRow.className = 'row';
+        headerRow.style.justifyContent = 'space-between';
+        const badge = document.createElement('span');
+        badge.className = 'tag badge';
+        badge.textContent = 'Work';
+        const remove = document.createElement('button');
+        remove.type = 'button';
+        remove.className = 'secondary';
+        remove.textContent = 'Remove';
+        remove.addEventListener('click', () => {
+          if (list.length === 1) {
+            list[0] = { title: '', year: '', image: '' };
+            renderWorks(list);
+          } else {
+            list.splice(idx, 1);
+            renderWorks(list);
+          }
+        });
+        headerRow.appendChild(badge);
+        headerRow.appendChild(remove);
+
+        const titleInput = document.createElement('input');
+        titleInput.type = 'text';
+        titleInput.placeholder = 'Title';
+        titleInput.value = work.title || '';
+        titleInput.className = 'work-title';
+        titleInput.addEventListener('input', () => {
+          list[idx].title = titleInput.value;
+          container.dataset.works = JSON.stringify(list);
+        });
+
+        const yearInput = document.createElement('input');
+        yearInput.type = 'text';
+        yearInput.placeholder = 'Year';
+        yearInput.value = work.year || '';
+        yearInput.className = 'work-year';
+        yearInput.addEventListener('input', () => {
+          list[idx].year = yearInput.value;
+          container.dataset.works = JSON.stringify(list);
+        });
+
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.accept = 'image/*';
+        fileInput.className = 'work-file';
+        fileInput.addEventListener('change', async (e) => {
+          if (!e.target.files?.length) return;
+          const base64 = await fileToBase64(e.target.files[0]);
+          list[idx].image = base64;
+          renderWorks(list);
+        });
+
+        if (work.image) {
+          const preview = document.createElement('img');
+          preview.src = work.image;
+          preview.alt = work.title || 'Work image';
+          preview.className = 'work-preview';
+          preview.addEventListener('click', () => openImageModal(work.image, work.title || 'Work'));
+          card.appendChild(preview);
+        }
+
+        card.appendChild(headerRow);
+        card.appendChild(titleInput);
+        card.appendChild(yearInput);
+        card.appendChild(fileInput);
+
+        container.appendChild(card);
+      });
+
+      container.dataset.works = JSON.stringify(list);
+      applyDynamicLockState();
+    }
+
+    function updateViewPanel({ name = 'Untitled', notes = '', links = [], images = [], works = [], history = [], lastContributor = '', tags = [] }) {
+      document.getElementById('viewName').textContent = name || 'Untitled';
+      document.getElementById('viewNotes').textContent = notes?.trim() || 'No notes yet.';
+
+      const tagsEl = document.getElementById('viewTags');
+      tagsEl.innerHTML = '';
+      const cleanedTags = normalizeTags(tags);
+      if (cleanedTags.length) {
+        cleanedTags.forEach(tag => {
+          const pill = document.createElement('span');
+          pill.className = 'tag';
+          pill.textContent = tag;
+          tagsEl.appendChild(pill);
+        });
+      } else {
+        const empty = document.createElement('span');
+        empty.className = 'view-text';
+        empty.textContent = 'No tags yet.';
+        tagsEl.appendChild(empty);
+      }
+
+      const linksEl = document.getElementById('viewLinks');
+      linksEl.innerHTML = '';
+      const cleanedLinks = (links || []).filter(Boolean);
+      if (cleanedLinks.length) {
+        cleanedLinks.forEach(link => {
+          const tag = document.createElement('a');
+          tag.href = link;
+          tag.target = '_blank';
+          tag.rel = 'noreferrer';
+          tag.className = 'tag';
+          tag.textContent = link.replace(/^https?:\/\//, '');
+          linksEl.appendChild(tag);
+        });
+      } else {
+        const empty = document.createElement('span');
+        empty.className = 'view-text';
+        empty.textContent = 'No links yet.';
+        linksEl.appendChild(empty);
+      }
+
+      const imagesEl = document.getElementById('viewImages');
+      imagesEl.innerHTML = '';
+      const normalizedImages = normalizeImages(images);
+      if (normalizedImages.length) {
+        normalizedImages.forEach((item, idx) => {
+          const wrapper = document.createElement('div');
+          wrapper.className = 'view-photo';
+          const img = document.createElement('img');
+          img.src = item.src;
+          img.alt = item.caption || `Image ${idx + 1}`;
+          img.style.width = '104px';
+          img.style.height = '104px';
+          img.style.objectFit = 'cover';
+          img.style.borderRadius = '12px';
+          img.style.boxShadow = 'var(--shadow)';
+          img.addEventListener('click', () => openImageModal(item.src, item.caption || name));
+          wrapper.appendChild(img);
+          if (item.caption) {
+            const cap = document.createElement('span');
+            cap.className = 'view-caption';
+            cap.textContent = item.caption;
+            wrapper.appendChild(cap);
+          }
+          imagesEl.appendChild(wrapper);
+        });
+      } else {
+        const empty = document.createElement('span');
+        empty.className = 'view-text';
+        empty.textContent = 'No photos yet.';
+        imagesEl.appendChild(empty);
+      }
+
+      const worksEl = document.getElementById('viewWorks');
+      worksEl.innerHTML = '';
+      const normalizedWorks = normalizeWorks(works);
+      if (normalizedWorks.length) {
+        normalizedWorks.forEach((work, idx) => {
+          const card = document.createElement('div');
+          card.className = 'work-card';
+          const title = document.createElement('div');
+          title.className = 'view-label';
+          title.textContent = work.title || `Work ${idx + 1}`;
+          const meta = document.createElement('div');
+          meta.className = 'view-text';
+          meta.textContent = work.year ? `Year: ${work.year}` : 'Year not set';
+          card.appendChild(title);
+          card.appendChild(meta);
+          if (work.image) {
+            const img = document.createElement('img');
+            img.src = work.image;
+            img.alt = work.title || 'Work image';
+            img.className = 'work-preview';
+            img.addEventListener('click', () => openImageModal(work.image, work.title || 'Work'));
+            card.appendChild(img);
+          }
+          worksEl.appendChild(card);
+        });
+      } else {
+        const empty = document.createElement('span');
+        empty.className = 'view-text';
+        empty.textContent = 'No related works yet.';
+        worksEl.appendChild(empty);
+      }
+
+      const historyEl = document.getElementById('viewHistory');
+      historyEl.innerHTML = '';
+      const log = Array.isArray(history) ? history : [];
+      const combined = log.slice(-10).reverse();
+      if (combined.length) {
+        combined.forEach(entry => {
+          const card = document.createElement('div');
+          card.className = 'work-card';
+          const who = document.createElement('div');
+          who.className = 'view-label';
+          who.textContent = entry.by || 'Someone';
+          const what = document.createElement('div');
+          what.className = 'view-text';
+          const when = entry.timestamp ? ` • ${formatDate(entry.timestamp)}` : '';
+          what.textContent = `${entry.summary || 'Updated'}${when}`;
+          card.appendChild(who);
+          card.appendChild(what);
+          historyEl.appendChild(card);
+        });
+      } else {
+        const empty = document.createElement('span');
+        empty.className = 'view-text';
+        empty.textContent = lastContributor ? `Last touched by ${lastContributor}.` : 'No contributions recorded yet.';
+        historyEl.appendChild(empty);
+      }
+    }
+
+    function getImagesFromPreview() {
+      try {
+        const preview = document.getElementById('photoPreview');
+        const parsed = JSON.parse(preview.dataset.images || '[]');
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function getWorksFromUI() {
+      try {
+        const container = document.getElementById('worksContainer');
+        const parsed = JSON.parse(container.dataset.works || '[]');
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (e) {
+        return [];
+      }
+    }
+
+    async function handleFileInput(files) {
+      if (!files || !files.length) return;
+      const existing = getImagesFromPreview();
+      for (const file of files) {
+        const base64 = await fileToBase64(file);
+        existing.push({ src: base64, caption: '' });
+      }
+      renderImages(existing);
+    }
+
+    function fileToBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function collectLinks() {
+      const inputs = [...document.querySelectorAll('#linksContainer input')];
+      return inputs.map(i => i.value.trim()).filter(Boolean);
+    }
+
+    async function importImageFromUrl() {
+      const urlInput = document.getElementById('photoUrl');
+      const url = urlInput.value.trim();
+      if (!url) return;
+      try {
+        const base64 = await fetchImageAsBase64(url);
+        const existing = getImagesFromPreview();
+        existing.push({ src: base64, caption: '' });
+        renderImages(existing);
+        urlInput.value = '';
+      } catch (e) {
+        console.error('Failed to import image', e);
+        alert('Could not fetch that image. Try another URL or download the file first.');
+      }
+    }
+
+    async function fetchImageAsBase64(url) {
+      const response = await fetch(url, { mode: 'cors' });
+      if (!response.ok) throw new Error('Network error');
+      const blob = await response.blob();
+      return await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    }
+
+    function openImageModal(src, caption = '') {
+      const modal = document.getElementById('imageModal');
+      document.getElementById('modalImage').src = src;
+      document.getElementById('modalCaption').textContent = caption;
+      modal.classList.remove('hidden');
+    }
+
+    function closeImageModal() {
+      const modal = document.getElementById('imageModal');
+      modal.classList.add('hidden');
+      document.getElementById('modalImage').src = '';
+      document.getElementById('modalCaption').textContent = '';
+    }
+
+    async function autoFillFromWeb() {
+      const name = document.getElementById('artistName').value.trim();
+      if (!name) {
+        alert('Enter a name first');
+        return;
+      }
+      setAutoFillStatus('Searching…');
+      try {
+        currentEnrichment = await fetchWikidataProfile(name);
+        if (!currentEnrichment) {
+          setAutoFillStatus('No structured info found.');
+          return;
+        }
+        applyEnrichment(currentEnrichment);
+        setAutoFillStatus('Auto-filled from Wikidata/Wikipedia.');
+      } catch (err) {
+        console.error(err);
+        setAutoFillStatus('Could not fetch details right now.', 'error');
+      }
+    }
+
+    async function fetchWikidataProfile(name) {
+      const searchUrl = `https://www.wikidata.org/w/api.php?action=wbsearchentities&search=${encodeURIComponent(name)}&language=en&format=json&origin=*`;
+      const searchRes = await fetch(searchUrl);
+      if (!searchRes.ok) throw new Error('Search failed');
+      const searchJson = await searchRes.json();
+      const candidate = (searchJson.search || [])[0];
+      if (!candidate) return null;
+
+      const entityUrl = `https://www.wikidata.org/wiki/Special:EntityData/${candidate.id}.json`;
+      const entityRes = await fetch(entityUrl);
+      if (!entityRes.ok) throw new Error('Entity fetch failed');
+      const entityJson = await entityRes.json();
+      const entity = entityJson.entities?.[candidate.id];
+      if (!entity) return null;
+
+      const claims = entity.claims || {};
+      const birth = claims.P569?.[0]?.mainsnak?.datavalue?.value?.time;
+      const nationalityIds = (claims.P27 || []).map(c => c.mainsnak?.datavalue?.value?.id).filter(Boolean);
+      const collectionIds = (claims.P195 || []).map(c => c.mainsnak?.datavalue?.value?.id).filter(Boolean);
+      const employerIds = (claims.P108 || []).map(c => c.mainsnak?.datavalue?.value?.id).filter(Boolean);
+
+      const relatedIds = [...new Set([...nationalityIds, ...collectionIds, ...employerIds])];
+      const labels = relatedIds.length ? await fetchLabels(relatedIds) : {};
+
+      const nationalities = nationalityIds.map(id => labels[id]).filter(Boolean);
+      const collections = collectionIds.map(id => labels[id]).filter(Boolean);
+      const employers = employerIds.map(id => labels[id]).filter(Boolean);
+
+      return {
+        name: candidate.label,
+        description: candidate.description || entity.descriptions?.en?.value || '',
+        birthDate: birth ? parseWikidataDate(birth) : null,
+        nationalities,
+        collections,
+        employers,
+        wikipediaUrl: entity.sitelinks?.enwiki?.url || '',
+        wikidataUrl: `https://www.wikidata.org/wiki/${candidate.id}`,
+      };
+    }
+
+    async function fetchLabels(ids) {
+      const url = `https://www.wikidata.org/w/api.php?action=wbgetentities&ids=${ids.join('|')}&props=labels&languages=en&format=json&origin=*`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('Label fetch failed');
+      const json = await res.json();
+      const map = {};
+      Object.entries(json.entities || {}).forEach(([id, data]) => {
+        const label = data.labels?.en?.value;
+        if (label) map[id] = label;
+      });
+      return map;
+    }
+
+    function parseWikidataDate(timeStr) {
+      try {
+        const match = timeStr.match(/(\d{4}-\d{2}-\d{2})/);
+        return match ? new Date(match[1]) : null;
+      } catch (_) {
+        return null;
+      }
+    }
+
+    function applyEnrichment(profile) {
+      if (!profile) return;
+      const notesEl = document.getElementById('artistNotes');
+      const parts = [];
+      if (profile.description) parts.push(profile.description);
+      if (profile.birthDate) parts.push(`Born: ${profile.birthDate.toLocaleDateString()}`);
+      if (profile.nationalities?.length) parts.push(`Nationality: ${profile.nationalities.join(', ')}`);
+      if (profile.collections?.length) parts.push(`Museums/Collections: ${profile.collections.slice(0, 6).join(', ')}`);
+      if (profile.employers?.length) parts.push(`Galleries/Institutions: ${profile.employers.slice(0, 6).join(', ')}`);
+      const autoNote = parts.join('\n');
+      if (autoNote) {
+        if (notesEl.value.trim()) {
+          notesEl.value = `${notesEl.value.trim()}\n\n${autoNote}`;
+        } else {
+          notesEl.value = autoNote;
+        }
+      }
+
+      const links = collectLinks();
+      const extraLinks = [profile.wikipediaUrl, profile.wikidataUrl].filter(Boolean);
+      const merged = [...links];
+      extraLinks.forEach(l => {
+        if (l && !merged.includes(l)) merged.push(l);
+      });
+      renderLinks(merged.length ? merged : ['']);
+    }
+
+    function generateId() {
+      if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+        return crypto.randomUUID();
+      }
+      const segment = () => Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
+      return `id-${segment()}-${segment()}-${segment()}-${segment()}`;
+    }
+
+    function saveCurrentArtist() {
+      const contributor = getContributorName();
+      persistContributor(contributor);
+      const name = document.getElementById('artistName').value.trim();
+      if (!name) {
+        alert('Artist name is required');
+        return;
+      }
+      const notes = document.getElementById('artistNotes').value;
+      const links = collectLinks();
+      const images = getImagesFromPreview();
+      const works = normalizeWorks(getWorksFromUI());
+      const tags = getTagsFromUI();
+      const timestamp = Date.now();
+
+      if (currentId) {
+        const idx = artists.findIndex(a => a.id === currentId);
+        if (idx !== -1) {
+          const previous = artists[idx];
+          const summary = summarizeChanges(previous, { name, notes, links, images, works, tags });
+          const history = [...(previous.history || []), { by: contributor, timestamp, summary }];
+          artists[idx] = { ...previous, name, notes, links, images, works, tags, updatedAt: timestamp, lastContributor: contributor, history };
+        }
+      } else {
+        const newArtist = { id: generateId(), name, notes, links, images, works, tags, updatedAt: timestamp, lastContributor: contributor, history: [{ by: contributor, timestamp, summary: 'Created artist' }] };
+        artists.push(newArtist);
+      }
+      sortArtists();
+      saveArtists();
+      renderTagFilter();
+      renderList(document.getElementById('searchInput').value);
+      saveRemoteData();
+      openList();
+    }
+
+    function deleteCurrentArtist() {
+      if (!currentId) {
+        resetEditor();
+        openList();
+        return;
+      }
+      const artist = artists.find(a => a.id === currentId);
+      if (!artist) return;
+      if (confirm(`Delete ${artist.name}?`)) {
+        artists = artists.filter(a => a.id !== currentId);
+        saveArtists();
+        renderTagFilter();
+        renderList(document.getElementById('searchInput').value);
+        openList();
+      }
+    }
+
+    function exportData() {
+      const payload = JSON.stringify({ artists }, null, 2);
+      const blob = new Blob([payload], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'artist-notebook-export.json';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    async function importDataFromFile(file) {
+      if (!file) return;
+      const text = await file.text();
+      let incoming = [];
+      try {
+        const parsed = JSON.parse(text);
+        if (Array.isArray(parsed)) incoming = parsed;
+        else if (Array.isArray(parsed.artists)) incoming = parsed.artists;
+      } catch (e) {
+        alert('Invalid file. Please choose a JSON export.');
+        return;
+      }
+      if (!incoming.length) {
+        alert('No artists found in this file.');
+        return;
+      }
+      const map = new Map(artists.map(a => [a.id, a]));
+      incoming.forEach(entry => {
+        if (!entry.id) return;
+        const existing = map.get(entry.id);
+        if (!existing || (entry.updatedAt || 0) >= (existing.updatedAt || 0)) {
+          map.set(entry.id, { ...existing, ...entry, tags: normalizeTags(entry.tags) });
+        }
+      });
+      artists = Array.from(map.values());
+      sortArtists();
+      saveArtists();
+      renderTagFilter();
+      renderList(document.getElementById('searchInput').value);
+      openList();
+      alert('Import complete. Data stays on your device; share the file privately to limit access.');
+    }
+
+    async function loadRemoteData() {
+      if (!remoteConfig?.readUrl) return;
+      try {
+        setRemoteStatus('Fetching shared data...');
+        const res = await fetch(remoteConfig.readUrl, {
+          headers: remoteConfig.token ? { Authorization: `Bearer ${remoteConfig.token}` } : {},
+        });
+        if (!res.ok) throw new Error('Remote fetch failed');
+        const data = await res.json();
+        const incoming = Array.isArray(data) ? data : Array.isArray(data.artists) ? data.artists : [];
+        if (incoming.length) {
+          const map = new Map(artists.map(a => [a.id, a]));
+          incoming.forEach(entry => {
+            if (!entry.id) return;
+            const normalized = { ...entry, tags: normalizeTags(entry.tags) };
+            if (!map.has(entry.id) || (entry.updatedAt || 0) >= (map.get(entry.id).updatedAt || 0)) {
+              map.set(entry.id, normalized);
+            }
+          });
+          artists = Array.from(map.values());
+          sortArtists();
+          saveArtists();
+          renderTagFilter();
+          renderList(document.getElementById('searchInput').value);
+        }
+        setRemoteStatus('Synced from shared directory');
+      } catch (e) {
+        console.warn('Remote load failed', e);
+        setRemoteStatus('Remote fetch failed', 'error');
+      }
+    }
+
+    async function saveRemoteData() {
+      if (!remoteConfig?.writeUrl) return;
+      try {
+        setRemoteStatus('Saving to shared directory...');
+        const res = await fetch(remoteConfig.writeUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(remoteConfig.token ? { Authorization: `Bearer ${remoteConfig.token}` } : {}),
+          },
+          body: JSON.stringify({ artists }),
+        });
+        if (!res.ok) throw new Error('Remote save failed');
+        setRemoteStatus('Saved online');
+      } catch (e) {
+        console.warn('Remote save failed', e);
+        setRemoteStatus('Could not save online', 'error');
+      }
+    }
+
+    function openList() {
+      document.getElementById('editorView').classList.add('hidden');
+      document.getElementById('listView').classList.remove('hidden');
+      resetEditor();
+    }
+
+    function initializeApp() {
+      loadContributor();
+      remoteConfig = loadRemoteConfig();
+      populateRemoteFields();
+      loadArtists();
+      renderTagFilter();
+      renderList(document.getElementById('searchInput').value);
+      resetEditor();
+      loadRemoteData();
+    }
+
+    function applyDynamicLockState() {
+      const dynamicInputs = [
+        ...document.querySelectorAll('#linksContainer input'),
+        ...document.querySelectorAll('.image-caption'),
+        ...document.querySelectorAll('#worksContainer input'),
+        ...document.querySelectorAll('#worksContainer .work-file'),
+        ...document.querySelectorAll('#worksContainer button'),
+        ...document.querySelectorAll('#photoPreview button'),
+        ...document.querySelectorAll('#tagsEditor input'),
+        ...document.querySelectorAll('#tagsEditor button'),
+        document.getElementById('remoteReadUrl'),
+        document.getElementById('remoteWriteUrl'),
+        document.getElementById('remoteToken'),
+      ].filter(Boolean);
+      dynamicInputs.forEach(el => (el.disabled = !editingEnabled));
+    }
+
+    function setEditingEnabled(enabled, viewData = null) {
+      editingEnabled = enabled;
+      const currentSnapshot = {
+        name: document.getElementById('artistName').value.trim(),
+        notes: document.getElementById('artistNotes').value,
+        links: collectLinks(),
+        images: getImagesFromPreview(),
+        works: getWorksFromUI(),
+        tags: getTagsFromUI(),
+      };
+
+      const inputs = [
+        document.getElementById('artistName'),
+        document.getElementById('artistNotes'),
+        document.getElementById('photoInput'),
+        document.getElementById('photoUrl'),
+      ];
+      inputs.forEach(el => {
+        el.disabled = !enabled;
+      });
+      document.getElementById('addLinkBtn').disabled = !enabled;
+      document.getElementById('importUrlBtn').disabled = !enabled;
+      document.getElementById('autoFillBtn').disabled = !enabled;
+      document.getElementById('addWorkBtn').disabled = !enabled;
+      applyDynamicLockState();
+
+      const saveBtn = document.getElementById('saveBtn');
+      const deleteBtn = document.getElementById('deleteBtn');
+      const editPanel = document.getElementById('editPanel');
+      const viewPanel = document.getElementById('viewPanel');
+
+      if (enabled) {
+        saveBtn.classList.remove('hidden');
+        deleteBtn.classList.remove('hidden');
+        editPanel.classList.remove('hidden');
+        viewPanel.classList.add('hidden');
+      } else {
+        saveBtn.classList.add('hidden');
+        deleteBtn.classList.add('hidden');
+        editPanel.classList.add('hidden');
+        viewPanel.classList.remove('hidden');
+        updateViewPanel(viewData || currentSnapshot);
+      }
+
+      const toggleBtn = document.getElementById('editToggleBtn');
+      toggleBtn.textContent = enabled ? 'View mode' : 'Edit mode';
+      toggleBtn.classList.toggle('secondary', !enabled);
+      toggleBtn.classList.toggle('danger', false);
+      const modeHint = document.getElementById('modeHint');
+      modeHint.textContent = enabled
+        ? 'Editing enabled. You can update details or delete this artist.'
+        : 'Locked for viewing. Tap "Edit mode" to make changes or delete.';
+    }
+
+    document.getElementById('addArtistBtn').addEventListener('click', () => openEditor());
+    document.getElementById('backBtn').addEventListener('click', openList);
+    document.getElementById('saveBtn').addEventListener('click', saveCurrentArtist);
+    document.getElementById('deleteBtn').addEventListener('click', deleteCurrentArtist);
+    document.getElementById('addLinkBtn').addEventListener('click', () => addLinkField());
+    document.getElementById('addWorkBtn').addEventListener('click', () => {
+      const works = getWorksFromUI();
+      works.push({ title: '', year: '', image: '' });
+      renderWorks(works);
+    });
+    document.getElementById('searchInput').addEventListener('input', (e) => renderList(e.target.value));
+    document.getElementById('photoInput').addEventListener('change', (e) => handleFileInput(e.target.files));
+    document.getElementById('importUrlBtn').addEventListener('click', importImageFromUrl);
+    document.getElementById('autoFillBtn').addEventListener('click', autoFillFromWeb);
+    document.getElementById('editToggleBtn').addEventListener('click', () => setEditingEnabled(!editingEnabled));
+    document.getElementById('closeModal').addEventListener('click', closeImageModal);
+    document.getElementById('contributorName').addEventListener('input', (e) => persistContributor(e.target.value.trim()));
+    document.getElementById('imageModal').addEventListener('click', (e) => {
+      if (e.target.classList.contains('modal-backdrop')) closeImageModal();
+    });
+    document.getElementById('titleLink').addEventListener('click', (e) => {
+      e.preventDefault();
+      openList();
+    });
+    document.getElementById('remoteReadUrl').addEventListener('input', () => saveRemoteConfig(collectRemoteFields()));
+    document.getElementById('remoteWriteUrl').addEventListener('input', () => saveRemoteConfig(collectRemoteFields()));
+    document.getElementById('remoteToken').addEventListener('input', () => saveRemoteConfig(collectRemoteFields()));
+
+    document.getElementById('appShell').classList.remove('hidden');
+    initializeApp();
+  </script>
+</body>
+</html>
