@@ -1,0 +1,11 @@
+{
+  "create_artist": { "points": 50 },
+  "edit_artist": { "points": 10 },
+  "upload_photo": { "points": 15 },
+  "add_work": { "points": 20 },
+  "badges": [
+    { "name": "Explorer", "description": "Created first artist", "icon_url": "/badges/explorer.svg", "condition": { "action": "create_artist", "count": 1 } },
+    { "name": "Curator", "description": "Added 10 works", "icon_url": "/badges/curator.svg", "condition": { "action": "add_work", "count": 10 } },
+    { "name": "Photographer", "description": "Uploaded 25 photos", "icon_url": "/badges/photographer.svg", "condition": { "action": "upload_photo", "count": 25 } }
+  ]
+}

@@ -1,0 +1,51 @@
+CREATE TABLE IF NOT EXISTS artists (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  birth_year INTEGER,
+  bio TEXT,
+  featured_image_url TEXT,
+  tags TEXT DEFAULT '[]',
+  links TEXT DEFAULT '[]'
+);
+
+CREATE TABLE IF NOT EXISTS photos (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  artist_id INTEGER NOT NULL,
+  image_url TEXT NOT NULL,
+  caption TEXT,
+  FOREIGN KEY (artist_id) REFERENCES artists(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS works (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  artist_id INTEGER NOT NULL,
+  title TEXT NOT NULL,
+  year INTEGER,
+  image_url TEXT,
+  notes TEXT,
+  FOREIGN KEY (artist_id) REFERENCES artists(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS users (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  email TEXT UNIQUE NOT NULL,
+  password TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS badges (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  description TEXT,
+  icon_url TEXT
+);
+
+CREATE TABLE IF NOT EXISTS points_logs (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  artist_id INTEGER,
+  action TEXT NOT NULL,
+  points INTEGER NOT NULL,
+  timestamp INTEGER NOT NULL,
+  FOREIGN KEY (user_id) REFERENCES users(id)
+);
