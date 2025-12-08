@@ -1,0 +1,7 @@
+RewriteEngine On
+
+RewriteCond %{REQUEST_URI} ^/api/uploads/
+RewriteRule ^api/uploads/(.*)$ api/uploads/$1 [L]
+
+RewriteCond %{REQUEST_URI} ^/api
+RewriteRule ^api/?(.*)$ api/index.php [QSA,L]
