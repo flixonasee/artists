@@ -8,7 +8,10 @@ $user = $_SESSION['user_id'] ?? null;
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Artist Notebook</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=1">
+    <style>
+        <?php if (file_exists(__DIR__ . '/style.css')) { echo file_get_contents(__DIR__ . '/style.css'); } ?>
+    </style>
 </head>
 <body>
 <div id="auth-pane" class="card">
